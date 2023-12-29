@@ -1,0 +1,14 @@
+*
+
+![0-9a-zA-Z]*/
+
+!*.py
+!README.md
+!LICENSE
+!*.cif
+!*.cxs
+!*.fa
+!*.pdb
+!*.txt
+
+.*
