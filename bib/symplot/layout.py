@@ -39,7 +39,7 @@ class PlotLayout():
             # parameter for subplots_adjust(bottom=...)
 
         # params for legend
-        self.legend_fontsize = 8
+        self.legend_fontsize = 8*self.mode.font_scale
         self.legend_linespacing = 1.4
         self.legend_score_descr = self.get_legend_score_descr()
 
@@ -63,9 +63,9 @@ class PlotLayout():
         Determine margin parameters.
         '''
         if self.plot_width <= 10:
-            self.subplots_adjust_left = 0.18
+            self.subplots_adjust_left = 0.18*self.mode.font_scale
         else:
-            self.subplots_adjust_left = 0.10
+            self.subplots_adjust_left = 0.10*self.mode.font_scale
 
         if not show_legend and reduced_mode_showall:
             self.subplots_adjust_left = 0.04
@@ -170,6 +170,10 @@ class PlotLayout():
         else:
             ax_fontsize = 9
             ax_top_fontsize = 9
+
+        if self.mode.plotlayout == 1:
+            ax_fontsize *= self.mode.font_scale
+            ax_top_fontsize *= self.mode.font_scale
 
         self.ax_fontsize = ax_fontsize
         self.ax_top_fontsize = ax_top_fontsize

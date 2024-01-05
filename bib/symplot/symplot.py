@@ -747,7 +747,8 @@ def calc_symplot(root_path, mode, assemb, symplot_):
                                                             mode.show_legend)
 
                 if mode.show_legend and symplot_.plot_width <= 10:
-                    fig.text(0.17, 0.093, text, ha='right', va='top', \
+                    fig.text(0.17*mode.font_scale, 0.093, text, \
+                             ha='right', va='top', \
                              fontsize=symplot_.ax_fontsize, zorder=20)
                     pos_h = 0.04
                     pos_v = 0.7
@@ -770,7 +771,7 @@ def calc_symplot(root_path, mode, assemb, symplot_):
                         symplot.legend.legend_datapoints_reduced( \
                                 fig, pos_h, pos_v, \
                                 symplot_.plot_width, \
-                                mode.circ_calibration_fact, \
+                                mode, \
                                 symplot_.legend_score_descr)
 
 
@@ -781,7 +782,9 @@ def calc_symplot(root_path, mode, assemb, symplot_):
                     if len(subchain_info_list) > 0:
                         subchain_info_list.pop()
 
-                    legend_txt = fig.text(0.01, pos_v-0.2, 'predictions:', \
+                    legend_txt = fig.text(0.01, \
+                                    pos_v-0.2-0.08*(mode.font_scale-1), \
+                                    'predictions:', \
                                     ha='left', va='top', \
                                     fontsize=symplot_.legend_fontsize, \
                                     zorder=20, \
@@ -804,12 +807,14 @@ def calc_symplot(root_path, mode, assemb, symplot_):
 
                         legend_txt = ax.annotate( \
                             '●', xycoords=legend_txt, xy=(0, -0.3), \
-                            ha='left', va='top', fontsize=12, zorder=20, \
+                            ha='left', va='top', fontsize=12*mode.font_scale, \
+                            zorder=20, \
                             linespacing=1.0, color=color_name) 
                         legend_txt_description = ax.annotate(
                             ' '+subchain_info_item, xycoords=legend_txt, \
-                            xy=(1, 0.1),
-                            ha='left', va='bottom', fontsize=8, zorder=20, \
+                            xy=(1, 0.1), \
+                            ha='left', va='bottom', \
+                            fontsize=symplot_.legend_fontsize, zorder=20, \
                             linespacing=1.0)
 
 

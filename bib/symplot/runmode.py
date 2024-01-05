@@ -81,6 +81,12 @@ class RunMode():
 
         self.show_legend = [True, False][0]
 
+        self.plotlayout = 0
+            # 0: plot layout for print
+            # 1: plot layout for presentations
+
+        self.font_scale = 1
+
         self.plottype = None
             # 0:specific species
             # 1:general plot with many species
@@ -109,5 +115,8 @@ class RunMode():
             if self.reduced == 1:
                 self.show_legend = False
                 self.show_main_bd_modes = [0]
+
+        if self.plotlayout == 1:
+            self.font_scale = 1.5
 
         return

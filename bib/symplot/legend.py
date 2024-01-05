@@ -41,29 +41,62 @@ def legend_datapoints(fig, pos_h, pos_v, circ_rad, plot_width, \
 
 
 def legend_datapoints_reduced(fig, pos_h, pos_v, plot_width, \
-                              circ_calibration_fact, score_descr):
+                              mode, score_descr):
     '''
     Create diagram legend with reduced data point description.
     '''
-    fig.text(pos_h, pos_v+0.18, \
+    fig.text(pos_h*mode.font_scale, pos_v+0.18, \
         score_descr, \
-        ha='center', va='top', fontsize=8, zorder=20)
-    fig.text(pos_h, pos_v+0.106, \
-        '0.2\n\n\n\n0.5\n\n\n\n\n0.8', \
-        ha='center', va='top', fontsize=8, zorder=20)
+        ha='center', va='top', fontsize=8*mode.font_scale, zorder=20)
 
-    circ_rad = circ_calibration_fact*0.2
-    circ0 = Ellipse((pos_h, pos_v+0.120), circ_rad, \
+    if mode.font_scale == 1.5:
+        fig.text(pos_h*mode.font_scale, pos_v+0.106, \
+            '\n0.2\n\n\n0.5\n\n\n\n0.8', \
+            ha='center', va='top', fontsize=8*mode.font_scale, zorder=20)
+    else:
+        fig.text(pos_h*mode.font_scale, pos_v+0.106, \
+            '0.2\n\n\n\n0.5\n\n\n\n\n0.8', \
+            ha='center', va='top', fontsize=8*mode.font_scale, zorder=20)
+
+    circ_rad = mode.circ_calibration_fact*0.2
+    if mode.font_scale == 1.5:
+        circ0 = Ellipse((pos_h*mode.font_scale, \
+                    pos_v+0.120-0.025), \
+                    circ_rad, \
+                    circ_rad*(plot_width/6), \
+                    color='orange', alpha=0.8, linewidth=0)
+    else:
+        circ0 = Ellipse((pos_h*mode.font_scale, \
+                    pos_v+0.120), \
+                    circ_rad, \
                     circ_rad*(plot_width/6), \
                     color='orange', alpha=0.8, linewidth=0)
 
-    circ_rad = circ_calibration_fact*0.5
-    circ1 = Ellipse((pos_h, pos_v+0.045), circ_rad, \
+    circ_rad = mode.circ_calibration_fact*0.5
+    if mode.font_scale == 1.5:
+        circ1 = Ellipse((pos_h*mode.font_scale, \
+                    pos_v+0.045-0.040), \
+                    circ_rad, \
+                    circ_rad*(plot_width/6), \
+                    color='orange', alpha=0.8, linewidth=0)
+    else:
+        circ1 = Ellipse((pos_h*mode.font_scale, \
+                    pos_v+0.045), \
+                    circ_rad, \
                     circ_rad*(plot_width/6), \
                     color='orange', alpha=0.8, linewidth=0)
 
-    circ_rad = circ_calibration_fact*0.8
-    circ2 = Ellipse((pos_h, pos_v-0.050), circ_rad, \
+    circ_rad = mode.circ_calibration_fact*0.8
+    if mode.font_scale == 1.5:
+        circ2 = Ellipse((pos_h*mode.font_scale, \
+                    pos_v-0.050-0.055), \
+                    circ_rad, \
+                    circ_rad*(plot_width/6), \
+                    color='orange', alpha=0.8, linewidth=0)
+    else:
+        circ2 = Ellipse((pos_h*mode.font_scale, \
+                    pos_v-0.050), \
+                    circ_rad, \
                     circ_rad*(plot_width/6), \
                     color='orange', alpha=0.8, linewidth=0)
 

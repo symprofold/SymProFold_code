@@ -6,7 +6,7 @@ import re
 
 
 def get_cif_col(l, colnumb):
-    """ Get column of given column number in line of cif file. """
+    ''' Get column of given column number in line of cif file. '''
 
     col = 0
 
@@ -20,7 +20,7 @@ def get_cif_col(l, colnumb):
 
 
 def sort_lines(out):
-    """ Sort lines of cif file regarding residue id. """
+    ''' Sort lines of cif file regarding residue id. '''
 
     out2 = [[] for i in range(0,100000)]
         # 100000: max residue id
@@ -65,7 +65,7 @@ def sort_lines(out):
 
 
 def postprocess(import_file, export_file):
-    """ Postprocess of cif file. """
+    ''' Postprocess of cif file. '''
     
     f = filesystem.get_file(import_file)
     current_chain_id = 0
@@ -106,8 +106,9 @@ def postprocess(import_file, export_file):
     return
 
 
-def compatibility_cif_export(export_path, export_model_id, session, cif_postprecess=True):
-    """ Compatibility cif export. """
+def compatibility_cif_export(export_path, export_model_id, session, \
+                             cif_postprecess=True):
+    ''' Compatibility cif export. '''
 
     export_path = filesystem.clean_path(export_path)
     debug_mode = False
@@ -128,8 +129,10 @@ def compatibility_cif_export(export_path, export_model_id, session, cif_postprec
 
     if cif_postprecess:
         if debug_mode:
-            postprocess(export_path[:-4]+'_tmp.cif', export_path[:-4]+'_tmp2.cif')
-        postprocess(export_path[:-4]+'_tmp.cif', export_path[:-4]+'_tmp.cif')
+            postprocess(export_path[:-4]+'_tmp.cif', \
+                        export_path[:-4]+'_tmp2.cif')
+        postprocess(export_path[:-4]+'_tmp.cif', \
+                    export_path[:-4]+'_tmp.cif')
 
     session.init()
     session.run('open "'+export_path[:-4]+'_tmp.cif"')
@@ -141,8 +144,9 @@ def compatibility_cif_export(export_path, export_model_id, session, cif_postprec
     return
 
 
-def compatibility_cif_export_combine(export_path, export_model_id, session, cif_postprecess=True):
-    """ Compatibility cif export with combination of models. """
+def compatibility_cif_export_combine(export_path, export_model_id, session, \
+                                     cif_postprecess=True):
+    ''' Compatibility cif export with combination of models. '''
 
     export_path = filesystem.clean_path(export_path)
     debug_mode = False
@@ -159,8 +163,10 @@ def compatibility_cif_export_combine(export_path, export_model_id, session, cif_
 
     if cif_postprecess:
         if debug_mode:
-            postprocess(export_path[:-4]+'_tmp.cif', export_path[:-4]+'_tmp2.cif')
-        postprocess(export_path[:-4]+'_tmp.cif', export_path[:-4]+'_tmp.cif')
+            postprocess(export_path[:-4]+'_tmp.cif', \
+                        export_path[:-4]+'_tmp2.cif')
+        postprocess(export_path[:-4]+'_tmp.cif', \
+                    export_path[:-4]+'_tmp.cif')
 
     session.init()
     session.run('open "'+export_path[:-4]+'_tmp.cif"')
@@ -179,7 +185,7 @@ def compatibility_cif_export_combine(export_path, export_model_id, session, cif_
 
 def cif_add_symm(source_path, export_path, a, b, c,
                  alpha, beta, gamma, symmgroup):
-    """ Add symmetry information to cif file. """
+    ''' Add symmetry information to cif file. '''
 
     a = str(round(a, 3))
     b = str(round(b, 3))
@@ -202,6 +208,8 @@ def cif_add_symm(source_path, export_path, a, b, c,
     "_cell.angle_alpha "+alpha, \
     "_cell.angle_beta  "+beta, \
     "_cell.angle_gamma "+gamma, \
+    "_cell.Z_PDB ?", \
+    "#", \
     "_symmetry.entry_id 01", \
     "_symmetry.space_group_name_H-M '"+symmgroup+"'"]
 
