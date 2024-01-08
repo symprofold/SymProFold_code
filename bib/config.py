@@ -15,7 +15,7 @@ class Config():
         ''' Initialization of the Config class. '''
 
         self.export_ax_predictions = True
-        self.version = 'v0-60'
+        self.version = 'v61'
 
         self.main_dir = filesystem.clean_path( \
                 os.path.dirname(os.path.realpath(__file__))+'/../')
@@ -55,15 +55,16 @@ class Config():
         self.runlevel = ret
 
         # runlevel 5, full
-        self.conformations =        [0] #standard
+        self.conformations =        [0] # standard
 
-        # flatten_modes 0,1,2,3,4:
+        # flatten_modes 0,1,2,3,4,5:
         # 0: pure superposition, 
         # 1: flattened, 
         # 2: snapin/tile,
         # 3: completed chains,
-        # 4: primitive_unit_cell
-        self.flatten_modes =        [0,1,2,3,4]
+        # 4: primitive unit cell,
+        # 5: assembly of 3x3 primitive unit cells
+        self.flatten_modes =        [0,1,2,4,5]
 
         self.delete_termini_modes = [0,1]
         self.filters_for_export =   [0] # standard, only one option because
@@ -187,6 +188,9 @@ class Config():
 
         self.export_path_primitive_unit_cell = self.export_path+ \
                                      'primitive_unit_cell/'
+
+        self.export_path_assembly = self.export_path+ \
+                                     'assembly/'
 
         self.export_path_complete_chains = self.export_path+ \
                                      'complete_chains/'

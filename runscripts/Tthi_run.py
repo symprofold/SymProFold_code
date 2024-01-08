@@ -19,13 +19,12 @@ sess = chimerax_api.ChimeraxSession(session)
 
 
 # options for runlevel 0
-conf.set_flatten_modes([0,1,2,3,4], 0)
+conf.set_flatten_modes([0,1,2,3,4,5], 0)
         # 0: pure superposition, 1: flattened, 2: snapin/tile,
-        # 3:completed chains, 4:primitive_unit_cell
+        # 3:completed chains, 4:primitive_unit_cell,
+        # 5: assembly of 3x3 primitive unit cells
 conf.set_delete_termini_modes([0,1], 0)
 
-# options for runlevel 5
-conf.set_flatten_modes([0,1,2,4], 5)
 
 conf.set_species('Tthi', 'Thermococcus thioreducens')
 conf.set_gene('A0A0Q2M111')
@@ -39,11 +38,11 @@ for conformation in  conf.conformations:
     ax = [Axis(model_reg), Axis(model_reg)]
 
     ax[0].set_session(sess, conf)
-    ax[0].set_folder(  'A0A0Q2M111_23x6/', 1) #set oriented path
+    ax[0].set_folder('A0A0Q2M111_23x6/', 1) # set oriented path
     ax[0].set_surface([ [295,387] ])
 
     ax[1].set_session(sess, conf)
-    ax[1].set_folder(  'A0A0Q2M111_x2/', 2) #set oriented path
+    ax[1].set_folder('A0A0Q2M111_x2/', 2) # set oriented path
     ax[1].set_surface([ [1,294], [388,1000] ]) 
 
     # ax[0].set_model_active(0)

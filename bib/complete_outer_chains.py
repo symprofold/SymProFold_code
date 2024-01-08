@@ -4,7 +4,7 @@ import export
 
 
 def complete_outer_chains(assembler, contact_submodel_orientation):
-    """ Complete outer chains of layer model. """
+    ''' Complete outer chains of layer model. '''
 
     ax0 = assembler.axes[0]
     ax1 = assembler.axes[1]

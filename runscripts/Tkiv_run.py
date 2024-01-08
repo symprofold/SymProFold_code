@@ -19,10 +19,11 @@ sess = chimerax_api.ChimeraxSession(session)
 
 
 #options for runlevel 0
-conf.set_flatten_modes([0,1,2,3,4], 0)    # 0,1,2,3,4
+conf.set_flatten_modes([0,1,2,3,4,5], 0)
         # 0: pure superposition, 1: flattened, 2: snapin/tile,
-        # 3:completed chains, 4:primitive_unit_cell
-conf.set_snapshot_modes([0,1], 0)   #0,1     snapshot_w_separated_chains
+        # 3:completed chains, 4:primitive_unit_cell,
+        # 5: assembly of 3x3 primitive unit cells
+conf.set_snapshot_modes([0,1], 0)   # snapshot_w_separated_chains
 conf.set_delete_termini_modes([0,1], 0)
 
 
@@ -38,15 +39,12 @@ for conformation in  conf.conformations:
     ax = [Axis(model_reg), Axis(model_reg)]
 
     ax[0].set_session(sess, conf)
-    ax[0].set_folder('P22258_15x6/', 1) #set oriented path
-    # ax[0].set_domains([ [416,478] ])
+    ax[0].set_folder('P22258_15x6/', 1) # set oriented path
     ax[0].set_domains([ [280,346] ])
     ax[0].set_surface([ [1,345] ])
 
     ax[1].set_session(sess, conf)
-    ax[1].set_folder('P22258_29x2/', 1) #set oriented path
-    # ax[1].set_domains([ [348,478] ])
-    #ax[1].set_surface([ [479,1000] ])
+    ax[1].set_folder('P22258_29x2/', 1) # set oriented path
     ax[1].set_domains([ [280,346] ])
     ax[1].set_surface([ [346,1000] ])
 

@@ -11,6 +11,7 @@ import export
 import filesystem
 import geometry
 import math
+import structure.primitive_unit_cell
 import proteinmerge
 import snapin
 import validation
@@ -38,11 +39,10 @@ class Assembler():
 
         if primitive_unit_cell_molecules != []:
             for primitive_unit_cell_molecule in primitive_unit_cell_molecules:
-                layer_flat. \
-                    add_primitive_unit_cell_molecule( \
-                        primitive_unit_cell_molecule)
+                layer_flat.primitive_unit_cell.add_molecule( \
+                                                primitive_unit_cell_molecule)
         else:
-            layer_flat.suggest_primitive_unit_cell_molecules()
+            layer_flat.primitive_unit_cell.suggest_molecules()
 
 
         self.layers = [layer, layer_flat]
@@ -687,7 +687,8 @@ class Assembler():
         # 1: flattened, 
         # 2: snapin/tile,
         # 3: completed chains,
-        # 4: primitive unit cell
+        # 4: primitive unit cell,
+        # 5: assembly of 3x3 primitive unit cells
 
         do_snapshot_w_separated_chains = 1
 
@@ -869,7 +870,8 @@ class Assembler():
               self.conf.export_path, \
               self.conf.export_path_tile, \
               self.conf.export_path_complete_chains, \
-              self.conf.export_path_primitive_unit_cell] \
+              self.conf.export_path_primitive_unit_cell, \
+              self.conf.export_path_assembly] \
               [flatten_mode], \
             self.conf.export_path_snapshot][snapshot]+ \
             self.conf.export_path_filters[filter_for_export]+ \
@@ -879,12 +881,13 @@ class Assembler():
             'flat_', \
             'tile_', \
             'complete_chains_', \
-            'primitive_unit_cell_'][flatten_mode]+ \
+            'primitive_unit_cell_', \
+            'assembly_3x3_'][flatten_mode]+ \
             lc_offset_infix+self.conf.version+'.cif'
         export_path = filesystem.clean_path(export_path)
 
         # superposition
-        if flatten_mode != 4:
+        if flatten_mode < 4:
             if len(self.axes) > 1:
 
                 if filter_for_export == 0:
@@ -949,10 +952,52 @@ class Assembler():
 
 
         # flatten_mode 4: primitive unit cell
-        if flatten_mode == 4:
+        elif flatten_mode == 4:
 
-            # export primitive unit cell if possible
-            self.export_primitive_unit_cell(combination_model_id, export_path)
+            # create and export primitive unit cell if possible
+            self.layers[1].primitive_unit_cell.definition(self.lc_offset)
+            self.layers[1].primitive_unit_cell. \
+                                        combine_to_model(combination_model_id)
+
+            self.layers[1].primitive_unit_cell. \
+                    export(combination_model_id, export_path, self.conf)            
+
+
+        # flatten_mode 5: assembly 3x3
+        elif flatten_mode == 5:
+
+            # create and export primitive unit cell if possible
+            self.layers[1].primitive_unit_cell.definition(self.lc_offset)
+            model_complete = self.layers[1].primitive_unit_cell. \
+                                        combine_to_model(combination_model_id)
+
+            if model_complete != False:
+                mates_n = 3
+                a = self.layers[1].primitive_unit_cell.a
+                b = self.layers[1].primitive_unit_cell.b
+
+                x = a
+                y = 0
+                ax0.chimerax_session. \
+                    run('sym #'+str(combination_model_id)+ \
+                        ' shift,'+str(mates_n)+','+str(x)+','+str(y)+',0')
+
+                current_model_id = ax0.chimerax_session.last_id()
+
+                x = a*math.cos(math.radians( \
+                                    self.layers[1].primitive_unit_cell.gamma))
+                y = b*math.sin(math.radians( \
+                                    self.layers[1].primitive_unit_cell.gamma))
+                ax0.chimerax_session. \
+                    run('sym #'+str(current_model_id)+ \
+                        ' shift,'+str(mates_n)+','+str(x)+','+str(y)+',0')
+
+                current_model_id = ax0.chimerax_session.last_id()
+
+                export.compatibility_cif_export(export_path, \
+                        current_model_id, \
+                        ax0.chimerax_session, \
+                        self.conf.cif_postprocess)
 
         return validation_result_tile
 
@@ -1109,56 +1154,3 @@ class Assembler():
         f.close()
 
         return
-
-
-    def export_primitive_unit_cell(self, combination_model_id, export_path):
-        ''' Export primitive unit cell. '''
-
-        if not(self.layers[1].symmgroup != '' and len(self.axes) == 2):
-            return False
-
-        prim = self.layers[1].primitive_unit_cell_molecules
-        comb_str = ''
-        for p in prim:
-            comb_str += ' #'+str(p)
-
-        ax0 = self.axes[0]
-        ax0.chimerax_session.run('combine '+comb_str+ \
-                ' close false modelId #'+str(combination_model_id))
-
-        a = self.layers[1].calc_lattice_constant(self.lc_offset)
-        b = self.layers[1].calc_lattice_constant(self.lc_offset)
-        c = 1000000
-        alpha = 90
-        beta = 90
-        gamma = 90
-        symmgroup = 'P 1'
-
-        if self.layers[1].symmgroup in ('p3', 'p6'):
-            gamma = 60
-
-            if not (self.axes[0].fold == 3 and self.axes[1].fold == 2):
-                ax0.chimerax_session. \
-                    run('turn z 30 models #'+ \
-                    str(ax0.chimerax_session.last_id()))
-
-        # validate export combined model
-        validation.validation(combination_model_id, \
-                              self.axes, \
-                              export_path, \
-                              self.conf, \
-                              ax0.chimerax_session)
-
-        export.compatibility_cif_export_combine( \
-                export_path, \
-                combination_model_id, \
-                ax0.chimerax_session, \
-                self.conf.cif_postprocess)
-        ctl.p('cif_add_symm')
-        export.cif_add_symm(export_path, export_path, \
-                            a, b, c, \
-                            alpha, beta, gamma, \
-                            symmgroup)
-        ctl.p('cif_add_symm finished')
-
-        return True

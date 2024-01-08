@@ -2,6 +2,7 @@ import ctl
 import geometry
 
 import math
+from structure.primitive_unit_cell import PrimitiveUnitCell
 
 
 class Layer():
@@ -12,17 +13,18 @@ class Layer():
 
     def __init__(self, axes=[]):
         ''' Initialization of the Axis class. '''
+
         self.symmgroup = ''
         self.symmgroups_compatible = []
         self.representations = {}
         self.axes = []
-        self.primitive_unit_cell_molecules = []
+        self.primitive_unit_cell = PrimitiveUnitCell(self)
         self.lattice_constant = 0
         self.refpoint_constant = 0
         self.lattice_constant_raw = ''
         self.refpoint_constant_raw = ''
         self.flipped = False
-            # indicattion if the layer has been flipped
+            # indication if the layer has been flipped
             # This is important for e.g. reference points, which then also have
             # to be determined for the flipped case.
 
@@ -54,14 +56,6 @@ class Layer():
 
         for axis in axes:
             self.axes.append(axis)
-
-        return
-
-
-    def add_primitive_unit_cell_molecule(self, model_id):
-        ''' Add a monimer molecule to primutive unit cell. '''
-
-        self.primitive_unit_cell_molecules.append(model_id)
 
         return
 
@@ -216,51 +210,6 @@ class Layer():
             f.write(f"residues per nm^2:   {round(density*100, 1)}\r\n")
 
         f.close()
-
-        return
-
-
-    def suggest_primitive_unit_cell_molecules(self):
-        ''' Suggest primitive unit cell molecules. '''
-
-        if len(self.axes) > 1:
-            if self.axes[0].fold == 3 and self.axes[1].fold == 2:
-                self.primitive_unit_cell_molecules = []
-                self.add_primitive_unit_cell_molecule('1.1')
-                self.add_primitive_unit_cell_molecule('1.2')
-                self.add_primitive_unit_cell_molecule('1.3')
-                self.add_primitive_unit_cell_molecule('8.3')
-                self.add_primitive_unit_cell_molecule('9.1')
-                self.add_primitive_unit_cell_molecule('10.2')
-
-            if self.axes[0].fold == 3 and self.axes[1].fold == 3:
-                self.primitive_unit_cell_molecules = []
-                self.add_primitive_unit_cell_molecule('1.1')
-                self.add_primitive_unit_cell_molecule('1.2')
-                self.add_primitive_unit_cell_molecule('1.3')
-
-            if self.axes[0].fold == 4 and self.axes[1].fold == 2:
-                self.primitive_unit_cell_molecules = []
-                self.add_primitive_unit_cell_molecule('1.3')
-                self.add_primitive_unit_cell_molecule('1.4')
-                self.add_primitive_unit_cell_molecule('12.1')
-                self.add_primitive_unit_cell_molecule('12.2') 
-
-            if self.axes[0].fold == 4 and self.axes[1].fold == 4:
-                self.primitive_unit_cell_molecules = []
-                self.add_primitive_unit_cell_molecule('1.1')
-                self.add_primitive_unit_cell_molecule('1.2')
-                self.add_primitive_unit_cell_molecule('11.3')
-                self.add_primitive_unit_cell_molecule('11.4')             
-
-        if self.axes[0].fold == 6:
-            self.primitive_unit_cell_molecules = []
-            self.add_primitive_unit_cell_molecule('1.1')
-            self.add_primitive_unit_cell_molecule('1.2')
-            self.add_primitive_unit_cell_molecule('1.3')
-            self.add_primitive_unit_cell_molecule('1.4')
-            self.add_primitive_unit_cell_molecule('1.5')
-            self.add_primitive_unit_cell_molecule('1.6')
 
         return
 
@@ -425,8 +374,8 @@ class Layer():
         if self.symmgroup == 'p1' or self.symmgroup == 'p2':
             lc = [self.refpoint_constant, self.refpoint_constant]
             al = 90
-            da = math.cos(al)*lc[1]
-            db = math.sin(al)*lc[0]
+            da = math.cos(math.radians(al))*lc[1]
+            db = math.sin(math.radians(al))*lc[0]
             p.append( [        0,   0, 0] )
             p.append( [    lc[0],   0, 0] )
 
@@ -474,33 +423,33 @@ class Layer():
         if self.symmgroup == 'p1' or self.symmgroup == 'p2':
             lc = [self.refpoint_constant, self.refpoint_constant]
             al = 90
-            da = math.cos(al)*lc[1]
-            db = math.sin(al)*lc[0]
+            da = math.cos(math.radians(al))*lc[1]
+            db = math.sin(math.radians(al))*lc[0]
             p.append( [-lc[0]-da, -db, 0] )
             p.append( [     0-da, -db, 0] )
             p.append( [ lc[0]-da, -db, 0] )
 
-            #p.append( [-lc[0],      0, 0] )
+            # p.append( [-lc[0],      0, 0] )
             p.append( [     0,      0, 0] )
-            #p.append( [ lc[0],      0, 0] )
+            # p.append( [ lc[0],      0, 0] )
 
-            #p.append( [-lc[0]+da,  db, 0] )
+            # p.append( [-lc[0]+da,  db, 0] )
             p.append( [     0+da,  db, 0] )
-            #p.append( [ lc[0]+da,  db, 0] )
+            # p.append( [ lc[0]+da,  db, 0] )
 
 
         if self.symmgroup == 'p3':
             d = math.sqrt(3)/2
             
-            #p.append( [       0,   -lc[0]  , 0] )
+            # p.append( [       0,   -lc[0]  , 0] )
 
             p.append( [-d*lc[0],   -lc[0]/2, 0] )
             p.append( [ d*lc[0],   -lc[0]/2, 0] )
 
             p.append( [       0,          0, 0] )
 
-            #p.append( [-d*lc[0],    lc[0]/2, 0] )
-            #p.append( [ d*lc[0],    lc[0]/2, 0] )
+            # p.append( [-d*lc[0],    lc[0]/2, 0] )
+            # p.append( [ d*lc[0],    lc[0]/2, 0] )
 
             p.append( [       0,    lc[0]  , 0] )
 
@@ -536,15 +485,15 @@ class Layer():
             elif self.axes[0].fold == 3:
                 d = math.sqrt(3)/2
                 
-                #p.append( [       0,   -lc[0]  , 0] )
+                # p.append( [       0,   -lc[0]  , 0] )
 
                 p.append( [-d*lc[0],   -lc[0]/2, 0] )
                 p.append( [ d*lc[0],   -lc[0]/2, 0] )
 
                 p.append( [       0,          0, 0] )
 
-                #p.append( [-d*lc[0],    lc[0]/2, 0] )
-                #p.append( [ d*lc[0],    lc[0]/2, 0] )
+                # p.append( [-d*lc[0],    lc[0]/2, 0] )
+                # p.append( [ d*lc[0],    lc[0]/2, 0] )
 
                 p.append( [       0,    lc[0]  , 0] )
 
