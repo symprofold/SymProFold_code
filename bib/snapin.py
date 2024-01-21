@@ -16,8 +16,7 @@ def get_trans_rot_param(ax0_fold, ax1_fold, model_number):
     rot_angle = 0
 
     if ax0_fold%ax1_fold == 0:
-        # e.g. ax0:3, ax1:3, ax0:4, ax1:2, ax0:4, ax1:4,
-        # ax0:6, ax1:2
+        # e.g. ax0:3, ax1:3, ax0:4, ax1:2, ax0:4, ax1:4, ax0:6, ax1:2
         rot_angle = ( model_number%(ax0_fold/ax1_fold) )*(360/ax0_fold)
 
     else:
@@ -106,8 +105,7 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
                 ctl.e(ax1_rep1)
                 ctl.e('snapin_p_first')
                 ctl.e(snapin_p_first)
-                ctl.error('snapin_layer: snapin distance too large')
-
+                raise Exception('snapin_layer: snapin distance too large')
 
             vect_start = [ax1_rep1[0]-snapin_p_first[0], \
                           ax1_rep1[1]-snapin_p_first[1], \
@@ -148,7 +146,7 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
                     ctl.e(ax_rep_center)
                     ctl.e('snapin_p')
                     ctl.e(snapin_p)
-                    ctl.error('snapin_layer: snapin distance too large')
+                    raise Exception('snapin_layer: snapin distance too large')
 
 
             # axis 1
@@ -171,7 +169,7 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
                     ctl.e(ax_rep)
                     ctl.e('snapin_p')
                     ctl.e(snapin_p)
-                    ctl.error('snapin_layer: snapin distance too large')
+                    raise Exception('snapin_layer: snapin distance too large')
 
 
                 # align representant (ax_rep) to model with
@@ -271,7 +269,8 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
                         ctl.e('steps')
                         ctl.e(steps)
                         ctl.e(steps%axes[1].fold)
-                        ctl.error('snapin_layer: abs(steps-steps_rounded)')
+                        raise Exception('snapin_layer: '+ \
+                                                'snapin rotation too large')
 
                     # previous connections
                     conn0 = sess.model_reg.get_model(ax_rep_id). \

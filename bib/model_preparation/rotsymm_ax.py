@@ -48,7 +48,7 @@ class RotSymmAxes():
         rank_max = 0
 
         for f in files:
-            print(f)
+            ctl.p(f)
             rank = metadata.get_rank(f)
             rank_max = max(rank_max, rank)
 

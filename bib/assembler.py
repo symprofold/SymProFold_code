@@ -48,6 +48,10 @@ class Assembler():
         self.layers = [layer, layer_flat]
 
         self.conf = conf
+        self.alignment_pivot_pos = 0
+            # 0: pivot residue more on the side of ax0
+            # 1: pivot residue more on the side of ax1
+
         self.export_file_infix = export_file_infix
 
         self.contact_submodel_orientation = contact_submodel_orientation
@@ -64,11 +68,8 @@ class Assembler():
         if lc_offset == False:
             self.lc_var = [0]
 
-
         # test if gene contains only one domain
         if len(conf.domains) == 1 and len(self.axes) > 1:
-            
-
             conf.set_export_path_filters([
                 '../raw/'+conf.export_file_prefix+'_showfullsuperposition', \
                 '../'+conf.export_file_prefix, \
@@ -81,30 +82,88 @@ class Assembler():
     def run(self, debug_mode=False):
         '''
         Run whole assembly process.
+
+        Return:
+            int: 1:assembly possible
+                 2:assembly not possible because tilt >45°
+                 3:assembly not possible because gap between both SymPlexes
+                    too large
         '''
         folds = [ax.fold for ax in self.axes]
         self.layers[1].export_possible_symmgroups(folds, self.conf)
 
-        self.build_layer()
+        try:
+            self.build_layer()
+        except Exception as e:
+            if str(e) == 'build_layer: tilt of ax1 not within range':
+                ctl.p(str(e))
+
+                return False, 2, str(e)
+
+            elif str(e) == 'RotSymmAxis: init: '+ \
+                    'rotational symmetry axis not perpendicular to xy plane':
+                ctl.p(str(e))
+
+                return False, 4, str(e)
+
+            elif str(e) == 'RotSymmAxis: get_rotsymm_axis: '+ \
+                            'determination of rotational symmetry axis '+ \
+                            'not possible':
+                ctl.p(str(e))
+
+                return False, 6, str(e)
+
+            elif str(e) == 'RotSymmAxis: init: '+ \
+                      'z component of rotational symmetry axis is <=0':
+                ctl.p(str(e))
+
+                return False, 7, str(e)
+
+            elif str(e) == 'process_layer_lc: no symmetry group determined':
+                ctl.p(str(e))
+
+                return False, 9, str(e)
+
+            else:
+                ctl.error('run: Exception')
 
         self.layers[1].export_param(self.conf.export_path+ \
                                     self.conf.export_file_prefix+ \
                                     self.export_file_infix, \
                                     lc_offset=self.lc_offset)
 
-        clashes = self.process_layer()
+        try:
+            clashes = self.process_layer()
+        except Exception as e:
+            if str(e) == 'combine_chains: dist_check failed':
+                ctl.p(str(e))
+
+                return False, 3, str(e)
+
+            elif str(e) == 'snapin_layer: snapin distance too large':
+                ctl.p(str(e))
+
+                return False, 5, str(e)
+
+            elif str(e) == 'snapin_layer: snapin rotation too large':
+                ctl.p(str(e))
+
+                return False, 8, str(e)
+
+            else:
+                ctl.error('run: Exception')
+
         ctl.d(clashes)
 
         if not debug_mode:
             self.conf.delete_rawfiles()
 
-        return
+        return True, 1, 'run: finished'
 
 
-    def get_coincident_residues(self, id1, id2, res_ov, session):
+    def get_coincident_residues(self, id1, id2, res_ov, session, max_dist=1):
         '''
-        Get corresponding residues in residue overlap that have a distance 
-        <=1.
+        Get corresponding residues in residue overlap that have a distance <=1.
         '''
         res_d = []
         coin_res = []
@@ -116,7 +175,7 @@ class Assembler():
             d = geometry.dist(id1_r, id2_r)
             res_d.append(d)
 
-            if d <= 1:
+            if d <= max_dist:
                 coin_res.append(r)
 
         return coin_res, res_d
@@ -178,6 +237,9 @@ class Assembler():
         - step 3: place ax0 representants around ax1
         - step 4: place ax0 models flattened around ax1
         '''
+        if self.layers[1].symmgroup == '':
+            raise Exception('process_layer_lc: no symmetry group determined')
+
         sess = self.axes[0].chimerax_session
         sess.init()
 
@@ -275,23 +337,11 @@ class Assembler():
                                     ax_0_model_id, ax_1_model_id)
 
 
-                res_ov = sess.get_residue_overlap( \
-                    ax_1_model_id, ax_0_model_id)
+                # get pivot residue for alignment of 2 SymPlexes
+                pivot_res = self.get_alignment_pivot_res( \
+                                            ax_0_model_id, ax_1_model_id, sess)
+                pivot_res = pivot_res[self.alignment_pivot_pos]
 
-                coin_res, res_d = self.get_coincident_residues( \
-                        ax_1_model_id, ax_0_model_id, res_ov, sess)
-
-                ax_1_resids = sess.resids(ax_1_model_id)
-                ax_0_resids = sess.resids(ax_0_model_id)
-
-                # determine which of both ends is inner end of overlap area
-                nterm_dist = abs(coin_res[0]-ax_1_resids[0])
-                cterm_dist = abs(ax_1_resids[-1]-coin_res[-1])
-
-                if nterm_dist < cterm_dist:
-                    alignment_fixppoint_res = coin_res[-1]
-                else:
-                    alignment_fixppoint_res = coin_res[0]
 
                 current_model_center = \
                         ax1.representations[current_model_id].get_center()
@@ -309,11 +359,10 @@ class Assembler():
                 diff = current_model_center-model_tmp_center
 
                 current_model_alignment_fixppoint_xyz = \
-                    sess.get_xyz(ax_1_model_id, alignment_fixppoint_res)
+                    sess.get_xyz(ax_1_model_id, pivot_res)
 
                 model_tmp_alignment_fixppoint_xyz = \
-                    sess.get_xyz((model_id_tmp,ax1_submodel_id), \
-                                 alignment_fixppoint_res)
+                    sess.get_xyz((model_id_tmp,ax1_submodel_id), pivot_res)
 
                 diff_fixppoint = current_model_alignment_fixppoint_xyz- \
                                  model_tmp_alignment_fixppoint_xyz
@@ -321,7 +370,7 @@ class Assembler():
                 sess.run('move x '+str(diff[0])+' models #'+str(model_id_tmp))
                 sess.run('move y '+str(diff[1])+' models #'+str(model_id_tmp))
 
-                # align z regarding alignment_fixppoint_res
+                # align z regarding pivot_res
                 sess.run('move z '+str(diff_fixppoint[2])+ \
                          ' models #'+str(model_id_tmp))
 
@@ -349,8 +398,7 @@ class Assembler():
                          ' models #'+str(model_id_tmp))
 
                     model_tmp_alignment_fixppoint_xyz_ = \
-                        sess.get_xyz((model_id_tmp,ax1_submodel_id), \
-                                     alignment_fixppoint_res)
+                        sess.get_xyz((model_id_tmp,ax1_submodel_id), pivot_res)
 
                     diff_fixppoint_ = current_model_alignment_fixppoint_xyz- \
                                      model_tmp_alignment_fixppoint_xyz_
@@ -417,9 +465,11 @@ class Assembler():
                 ax1_tilt_deg = math.degrees(ax1_tilt)
 
                 if abs(ax1_tilt_deg) > 45:
-                    ctl.e(rotsymm_axis)
-                    ctl.e(ax1_tilt_deg)
-                    ctl.error('build_layer: '+ \
+                    ctl.p(rotsymm_axis)
+                    ctl.p(ax1_tilt_deg)
+                    ctl.e('build_layer: '+ \
+                              'tilt of ax1 not within range')
+                    raise Exception('build_layer: '+ \
                               'tilt of ax1 not within range')
 
 
@@ -643,6 +693,7 @@ class Assembler():
         # align layer_flat to ref points
         if len(self.axes) > 1 and max(self.conf.flatten_modes) >= 1:
             ax0.chimerax_session.run('open "'+self.conf.layer_raw_path+'"')
+
             align_layer.align_layer(self.axes, \
                                     self.layers[1], \
                                     self.conf, \
@@ -934,7 +985,8 @@ class Assembler():
 
             # validate export combined model
             validation_results = validation.validation( \
-                                    combination_model_id, \
+                                    (combination_model_id,), \
+                                    (combination_model_id,), \
                                     self.axes, \
                                     export_path, \
                                     self.conf, \
@@ -993,6 +1045,21 @@ class Assembler():
                         ' shift,'+str(mates_n)+','+str(x)+','+str(y)+',0')
 
                 current_model_id = ax0.chimerax_session.last_id()
+
+                # model id of the center primitive unit cell (puc) in the
+                # 3x3 assembly
+                central_puc_id = (current_model_id, 2, 2)
+
+                # validate model
+                validation_scores = validation.validation(central_puc_id, \
+                                                    (current_model_id,), \
+                                                    self.axes, \
+                                                    export_path, \
+                                                    self.conf, \
+                                                    ax0.chimerax_session)
+
+                self.layers[1].primitive_unit_cell.validation_scores = \
+                                                    validation_scores[1]
 
                 export.compatibility_cif_export(export_path, \
                         current_model_id, \
@@ -1133,6 +1200,42 @@ class Assembler():
                                               ax0.chimerax_session)
 
         return all_joins
+
+
+    def get_alignment_pivot_res(self, ax0_model_id, ax1_model_id, sess):
+        '''
+        Get list of 2 pivot points for alignment of 2 SymPlexes.
+
+        Return:
+            pivot_res: [pivot residue more on the side of ax0,
+                        pivot residue more on the side of ax1]
+        '''
+        res_ov = sess.get_residue_overlap(ax0_model_id, ax1_model_id)
+
+        coin_res, res_d = self.get_coincident_residues( \
+                ax0_model_id, ax1_model_id, res_ov, sess)
+
+        if len(coin_res) == 0:
+            coin_res, res_d = self.get_coincident_residues( \
+                    ax0_model_id, ax1_model_id, res_ov, sess, 2)
+
+        if len(coin_res) == 0:
+            ctl.error('Assembler: get_alignment_pivot_res: '+ \
+                    'no coincident residues')
+
+        ax0_resids = sess.resids(ax0_model_id)
+        ax1_resids = sess.resids(ax1_model_id)
+
+        # determine which of both ends is inner end of overlap area
+        nterm_dist = abs(coin_res[0]-ax1_resids[0])
+        cterm_dist = abs(ax1_resids[-1]-coin_res[-1])
+
+        if nterm_dist < cterm_dist:
+            pivot_res = [coin_res[-1], coin_res[0]]
+        else:
+            pivot_res = [coin_res[0], coin_res[-1]]
+
+        return pivot_res
 
 
     def export_meta(self, ax, file):

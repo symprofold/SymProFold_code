@@ -6,8 +6,15 @@ import filesystem
 import math
 
 
-def validation(model_id, axes, export_path, conf, sess):
+def validation(model_id, model_id_restrict, axes, export_path, conf, sess):
     ''' Validation of created models and export of validation data. '''
+
+    model_id = sess.model_reg.convert_model_id(model_id)
+    model_id_restrict = sess.model_reg.convert_model_id(model_id_restrict)
+
+    model_id_str = sess.model_reg.convert_model_id_to_str(model_id)
+    model_id_restrict_str = sess.model_reg. \
+                                convert_model_id_to_str(model_id_restrict)
 
     if export_path[0:len(conf.export_path)] != conf.export_path:
         ctl.e(export_path)
@@ -24,8 +31,8 @@ def validation(model_id, axes, export_path, conf, sess):
 
     # determination of clashes
     # ------------------------
-    clashes = sess.run('clashes #'+str(model_id)+' & ~:cys'+ \
-                       ' restrict #'+str(model_id)+' & ~:cys'+ \
+    clashes = sess.run('clashes #'+str(model_id_str)+' & ~:cys'+ \
+                       ' restrict #'+str(model_id_restrict_str)+' & ~:cys'+ \
                        ' intraModel true interModel true interSubmodel true')
             # skip cysteines to avoid counting clashes caused by unrecognized
             # disulfide bonds
@@ -33,7 +40,8 @@ def validation(model_id, axes, export_path, conf, sess):
             # notice: a ChimeraX model including the clashes is created
 
     clashes = len(clashes)
-    model_res_n = sess.get_res_n((model_id,))
+
+    model_res_n = sess.get_model_res_n(model_id)
     clashes_per_100residues = 100*clashes/model_res_n
     clashes_per_residue = clashes/model_res_n
 
@@ -90,9 +98,10 @@ def validation(model_id, axes, export_path, conf, sess):
     overall = clashes_per_100residues+rmsd
 
     f = open(path_validation_file+ \
-            str(round(overall))+ \
-            '_cla'+str(round(clashes_per_100residues, 2))+ \
-            '_be'+str(round(rmsd))+'.txt', 'w', encoding='utf-8')
+            'qual'+str(round(quality_score, 3))+ \
+            '_cl'+str(round(clashes_per_residue, 3))+ \
+            '_be'+str(round(ax1_tilt_score, 3))+ \
+             '.txt', 'w', encoding='utf-8')
     f.write('clashes: '+str(clashes)+"\r\n")  
     f.write('intermolecular clashes per 100 residues: '+ \
             str(round(clashes_per_100residues, 2))+"\r\n")
@@ -120,4 +129,5 @@ def validation(model_id, axes, export_path, conf, sess):
 
     f.close()
 
-    return [clashes_per_100residues]
+    return [clashes_per_100residues, \
+            [quality_score, clashes_per_residue, ax1_tilt_score]]

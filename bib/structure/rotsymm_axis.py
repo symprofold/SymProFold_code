@@ -31,14 +31,14 @@ class RotSymmAxis():
         if abs(self.axis[2]) < 0.99:
             ctl.e(self.molecule.model_id)
             ctl.e(self.axis)
-            ctl.error('RotSymmAxis: init: '+ \
+            raise Exception('RotSymmAxis: init: '+ \
                       'rotational symmetry axis not perpendicular to xy plane')
 
         # check if z component of rotational symmetry axis is >0.
         if self.axis[2] <= 0:
             ctl.e(self.molecule.model_id)
             ctl.e(self.axis)
-            ctl.error('RotSymmAxis: init: '+ \
+            raise Exception('RotSymmAxis: init: '+ \
                       'z component of rotational symmetry axis is <=0')
 
         return
@@ -97,9 +97,9 @@ class RotSymmAxis():
                     self.frame.reference_points_type = type_
 
                 else:
-                    ctl.error('RotSymmAxis: get_rotsymm_axis: '+ \
-                              'determination of rotational symmetry axis '+ \
-                              'not possible')
+                    raise Exception('RotSymmAxis: get_rotsymm_axis: '+ \
+                            'determination of rotational symmetry axis '+ \
+                            'not possible')
 
                 if rotaxis[2] < 0:
                     self.orientation_initial = -1

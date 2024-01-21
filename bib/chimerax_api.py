@@ -232,6 +232,32 @@ class ChimeraxSession():
         return length
 
 
+    def get_model_res_n(self, model_id, selector=3):
+        '''
+        Get overall number of residues of a given model_id including submodels
+        of this model_id.
+        The model_id can be a submodel.
+        '''
+        model_id = self.model_reg.convert_model_id(model_id)
+        model_id_str = self.model_reg.convert_model_id_to_str(model_id)
+
+        length = 0
+
+        for s in all_atomic_structures(self.session):
+            ctl.p(str(s))
+
+            if ('#'+model_id_str+'.' in str(s)+' ') or \
+               ('#'+model_id_str+' ' in str(s)+' '):
+                for r in s.residues:
+                    arr = str(r).split(' ')
+                    res = arr[-2]
+
+                    if len(res) == selector:  
+                        length += 1
+
+        return length
+
+
     def last_id(self):
         '''
         Get highest model_id of all models in a ChimeraX session that are

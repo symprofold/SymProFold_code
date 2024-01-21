@@ -291,7 +291,7 @@ def determine_clusters(mode, subchain_mode, root_path, assemb, verbous):
         # determine interface clusters (cluster by interfaces)
         # ----------------------------------------------------
         if verbous:
-            print('determine interface clusters')
+            ctl.p('determine interface clusters')
 
         for interface_cluster_mode in mode.interface_cluster_modes:
             interface_cluster0, g0, cluster_n0 = interface_cluster.cluster( \

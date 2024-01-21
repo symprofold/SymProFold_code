@@ -35,18 +35,29 @@ def get_sibling_rmsd(model_id0, model_id1, resranges, sess):
     return rmsd, sibling_distances
 
 
-def get_termini(rmsds):
-    ''' Get termini from given RMSD list. '''
-
+def get_termini(rmsds, start_res=1):
+    '''
+    Get termini from given RMSD list.
+    Signal sequence should be included in N terminus.
+    '''
     cutoff_N = 5 # cutoff in Angstrom
     cutoff_C = cutoff_N
 
     termini = [-1,10000]
     for r in rmsds:
-         if termini[0] == -1 and rmsds[r] <= cutoff_N:
-             termini[0] = r-1
-         if rmsds[r] <= cutoff_C:
-             termini[1] = r+1
+        if r <= start_res:
+            continue
+        if termini[0] == -1 and rmsds[r] <= cutoff_N:
+            termini[0] = r-1
+        if rmsds[r] <= cutoff_C:
+            termini[1] = r+1
+
+    # signal sequence should be part of N terminus
+    if termini[0] <= 20 and \
+       rmsds[21] > cutoff_N and rmsds[22] > cutoff_N and \
+       rmsds[23] > cutoff_N and rmsds[24] > cutoff_N and \
+       rmsds[25] > cutoff_N:
+        return get_termini(rmsds, start_res=21)
 
     return termini
 

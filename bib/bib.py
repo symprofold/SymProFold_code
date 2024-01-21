@@ -269,7 +269,7 @@ def combine_chains(model1_id, model2_id, session, dest_id=500, \
         ctl.e(id2)        
         ctl.e(dist_check)
         ctl.e(dist)
-        ctl.error('combine_chains: dist_check failed')
+        raise Exception('combine_chains: dist_check failed')
 
     id1_chainid = session.get_chainid(id1)
     session.run('changechains #'+str(id1)+' '+id1_chainid)

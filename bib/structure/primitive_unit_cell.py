@@ -21,6 +21,7 @@ class PrimitiveUnitCell():
         self.beta = None
         self.gamma = None
         self.symmgroup = None
+        self.validation_scores = None
 
         return
 
@@ -130,8 +131,9 @@ class PrimitiveUnitCell():
 
         ax0 = self.layer.axes[0]
 
-        # validate export combined model
-        validation.validation(combination_model_id, \
+        # validate combined model
+        validation.validation((combination_model_id,), \
+                              (combination_model_id,), \
                               self.layer.axes, \
                               export_path, \
                               conf, \
