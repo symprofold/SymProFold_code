@@ -150,6 +150,17 @@ class Assembler():
 
                 return False, 8, str(e)
 
+            elif str(e) == 'snapin_layer: snapin rotation step too large':
+                ctl.p(str(e))
+
+                return False, 10, str(e)
+
+            elif str(e) == 'process_layer_specific: '+ \
+                                    'ax surface completely within termini':
+                ctl.p(str(e))
+
+                return False, 11, str(e)
+
             else:
                 ctl.error('run: Exception')
 
@@ -838,8 +849,40 @@ class Assembler():
 
 
         if deletetermini == 1:
+
+            # raise exception if ax0 surface completely within termini range
+            for i in ax0.representations:
+                ax0_termini = ax0.representations[i].termini
+
+                if ax0.surface[0][1] <= ax0_termini[0]:
+
+                    raise Exception('process_layer_specific: '+ \
+                                    'ax surface completely within termini')
+
+                if ax0.surface[0][0] >= ax0_termini[1]:
+
+                    raise Exception('process_layer_specific: '+ \
+                                    'ax surface completely within termini')
+
             ax0.delete_termini()
+
             if len(self.axes) > 1:
+
+                # raise exception if ax1 surface completely within
+                # termini range
+                for i in ax1.representations:
+                    ax1_termini = ax1.representations[i].termini
+
+                    if ax1.surface[0][1] <= ax1_termini[0]:
+
+                        raise Exception('process_layer_specific: '+ \
+                                        'ax surface completely within termini')
+
+                    if ax1.surface[0][0] >= ax1_termini[1]:
+
+                        raise Exception('process_layer_specific: '+ \
+                                        'ax surface completely within termini')
+
                 ax1.delete_termini()
 
 

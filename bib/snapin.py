@@ -249,8 +249,8 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
                     ctl.d('steps_rounded')
                     ctl.d(steps_rounded)
                     ctl.d(steps)
-                    ctl.error('snapin_layer: rot_step error: '+ \
-                              'steps_rounded')
+                    raise Exception('snapin_layer: '+ \
+                                            'snapin rotation step too large')
 
 
                 # update connections only when necessary

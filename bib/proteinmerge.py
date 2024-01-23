@@ -4,7 +4,7 @@ import geometry
 
 
 def complex_merge(id1, ids2_, sess):
-    """ Merge molecule complex 1 with list of ids (ids2). """
+    ''' Merge molecule complex 1 with list of ids (ids2). '''
 
     joinwith = []
 
@@ -53,7 +53,7 @@ def complex_merge(id1, ids2_, sess):
 
 
 def protein_merge(subid1, ids2, sess):
-    """ Merge molecule 1 with list of ids (ids2). """
+    ''' Merge molecule 1 with list of ids (ids2). '''
 
     joinwith = []
     subid1 = sess.model_reg.convert_model_id_to_str(subid1)
@@ -97,9 +97,9 @@ def protein_merge(subid1, ids2, sess):
 
 
 def check_merge_possible(id_a, id_b, sess, dist_cutoff=40):
-    """
+    '''
     Check whether merging of 2 submodels is possible regarding distance.
-    """
+    '''
     ctl.d(id_a)
     ctl.d(id_b)
 
