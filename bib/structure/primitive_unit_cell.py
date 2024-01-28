@@ -58,46 +58,68 @@ class PrimitiveUnitCell():
     def suggest_molecules(self):
         ''' Suggest primitive unit cell molecules. '''
 
+        molecules_to_add = []
+
         if len(self.layer.axes) > 1:
             if self.layer.axes[0].fold == 3 and self.layer.axes[1].fold == 2:
-                self.molecules = []
-                self.add_molecule('1.1')
-                self.add_molecule('1.2')
-                self.add_molecule('1.3')
-                self.add_molecule('8.3')
-                self.add_molecule('9.1')
-                self.add_molecule('10.2')
+                molecules_to_add = ['1.1', '1.2', '1.3', '8.3', '9.1', '10.2']
+
+                if self.model_completeness(molecules_to_add) == False:
+                    ctl.error('PrimitiveUnitCell: suggest_molecules: '+ \
+                                'monomers not complete')
 
             if self.layer.axes[0].fold == 3 and self.layer.axes[1].fold == 3:
-                self.molecules = []
-                self.add_molecule('1.1')
-                self.add_molecule('1.2')
-                self.add_molecule('1.3')
+                molecules_to_add = ['1.1', '1.2', '1.3']
+
+                if self.model_completeness(molecules_to_add) == False:
+                    ctl.error('PrimitiveUnitCell: suggest_molecules: '+ \
+                                'monomers not complete')
 
             if self.layer.axes[0].fold == 4 and self.layer.axes[1].fold == 2:
-                self.molecules = []
-                self.add_molecule('1.3')
-                self.add_molecule('1.4')
-                self.add_molecule('12.1')
-                self.add_molecule('12.2') 
+                molecules_to_add = ['1.3', '1.4', '12.1', '12.2']
+
+                if self.model_completeness(molecules_to_add) == False:
+                    molecules_to_add = ['1.1', '1.2', '1.3', '1.4']
 
             if self.layer.axes[0].fold == 4 and self.layer.axes[1].fold == 4:
-                self.molecules = []
-                self.add_molecule('1.1')
-                self.add_molecule('1.2')
-                self.add_molecule('11.3')
-                self.add_molecule('11.4')             
+                molecules_to_add = ['1.1', '1.2', '11.3', '11.4']
+
+                if self.model_completeness(molecules_to_add) == False:
+                    molecules_to_add = ['1.1', '1.2', '1.3', '1.4']
 
         if self.layer.axes[0].fold == 6:
+            molecules_to_add = ['1.1', '1.2', '1.3', '1.4', '1.5', '1.6']
+
+            if self.model_completeness(molecules_to_add) == False:
+                ctl.error('PrimitiveUnitCell: suggest_molecules: '+ \
+                            'monomers not complete')
+
+
+        if self.molecules == [] and molecules_to_add != []:
             self.molecules = []
-            self.add_molecule('1.1')
-            self.add_molecule('1.2')
-            self.add_molecule('1.3')
-            self.add_molecule('1.4')
-            self.add_molecule('1.5')
-            self.add_molecule('1.6')
+
+            for m in molecules_to_add:
+                self.add_molecule(m)
 
         return
+
+
+    def model_completeness(self, molecules_to_add):
+        '''
+        Check if a monomers is complete.
+        A monomer is counted as complete when the model covers at least 85% of
+        the full length sequence.
+        '''
+        seqlen = self.layer.seqlen()
+
+        for m in molecules_to_add:
+            m_seq = self.layer.axes[0].chimerax_session.get_seq(m)
+            completeness = len(m_seq)/seqlen
+
+            if completeness < 0.85:
+                return False
+
+        return True
 
 
     def combine_to_model(self, combination_model_id):

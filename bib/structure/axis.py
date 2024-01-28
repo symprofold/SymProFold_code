@@ -365,15 +365,19 @@ class Axis():
             # set abstract Axis object
             self.representations[current_model_id].axis = self
 
-            # register model in model_reg
+            # register model in model_reg and assign Monomer objects to
+            # Axis_rep object
             self.model_reg.add_model(current_model_id, \
                     self.representations[current_model_id], \
                     'axis', register_writeprotection)
 
             for i in range(1, multimer_n+1):
+                current_model_monomer = Monomer(self.model_reg, \
+                                                current_model_id)
                 self.model_reg.add_model((current_model_id, i), \
-                    Monomer(self.model_reg, current_model_id), 'monomer', \
-                            register_writeprotection)
+                    current_model_monomer, 'monomer', register_writeprotection)
+                self.representations[current_model_id]. \
+                    monomers[(current_model_id, i)] = current_model_monomer
 
 
             # set parameter of Axis_rep object

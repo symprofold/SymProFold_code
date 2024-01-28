@@ -5,7 +5,8 @@ import glob
 
 
 '''
-Module providing functions to determine combinations of SymPlexes.
+Module providing functions to determine potential combinations of SymPlexes and
+calculate/assemble them.
 '''
 
 def symplex_comb(ax):
@@ -155,3 +156,43 @@ def subchain_order(symplex0_folder, symplex1_folder, conf):
     ctl.error('subchain_order')
 
     return
+
+
+def symplex_folders(symplex0_predscen, symplex1_predscen, \
+                    subfolder_prediction_scenarios, conf):
+    '''
+    Get folders of given prediction scenarios sorted by the order of the
+    rotational symmetry axis.
+    The SymPlex with the highest order is ranked first.
+    '''
+    multiplicity0 = int(symplex0_predscen[-1])
+    multiplicity1 = int(symplex1_predscen[-1])
+
+    if multiplicity0 >= multiplicity1:
+        symplex0_folder = subfolder_prediction_scenarios+conf.gene+'_'+ \
+                                    symplex0_predscen.replace('FL', '')+'/'
+        symplex1_folder = subfolder_prediction_scenarios+conf.gene+'_'+ \
+                                    symplex1_predscen.replace('FL', '')+'/'
+    else:
+        symplex1_folder = subfolder_prediction_scenarios+conf.gene+'_'+ \
+                                    symplex0_predscen.replace('FL', '')+'/'
+        symplex0_folder = subfolder_prediction_scenarios+conf.gene+'_'+ \
+                                    symplex1_predscen.replace('FL', '')+'/'
+
+    return symplex0_folder, symplex1_folder
+
+
+def check_processed(comb_fn_str):
+    '''
+    Check if a combination of SymPlexes has already been calculated.
+    '''
+    folder = sorted(glob.glob(comb_fn_str))
+
+    if len(folder) > 1:
+        ctl.e(folder)
+        ctl.error('check_processed: len(folder) > 1')
+        
+    if len(folder) == 1:
+        return True
+
+    return False

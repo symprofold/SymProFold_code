@@ -216,7 +216,7 @@ class Layer():
 
     def get_possible_symmgroups(self, axes):
         '''
-        Determine possible symmetry groups usinf fold information of given
+        Determine possible symmetry groups using fold information of given
         axes.
 
         axes: list of the axis' respective folds
@@ -231,82 +231,74 @@ class Layer():
             input_folds[a] += 1
 
         # check for p1
-        if  input_folds[2] in (1, 2) and \
-            input_folds[3] == 0 and \
-            input_folds[4] == 0 and \
-            input_folds[6] == 0:
+        if input_folds[2] == 0 and \
+           input_folds[3] == 0 and \
+           input_folds[4] == 0 and \
+           input_folds[6] == 0:
 
-            compatible.append(1)
+           compatible.append(1)
 
         # check for p2
-        if  input_folds[2] in (1, 2, 3) and \
-            input_folds[3] == 0 and \
-            input_folds[4] == 0 and \
-            input_folds[6] == 0:
+        if input_folds[2] in (1, 2, 3) and \
+           input_folds[3] == 0 and \
+           input_folds[4] == 0 and \
+           input_folds[6] == 0:
 
-            compatible.append(2)
+           compatible.append(2)
 
-        if  input_folds[2] == 3 and \
-            input_folds[3] == 0 and \
-            input_folds[4] == 0 and \
-            input_folds[6] == 0:
+        if input_folds[2] == 3 and \
+           input_folds[3] == 0 and \
+           input_folds[4] == 0 and \
+           input_folds[6] == 0:
 
-            determined.append(2)
+           determined.append(2)
 
         # check for p3
-        if (input_folds[2] == 0 and \
-            input_folds[3] in (1, 2) and \
-            input_folds[4] == 0 and \
-            input_folds[6] == 0):
+        if input_folds[2] == 0 and \
+           input_folds[3] in (1, 2, 3) and \
+           input_folds[4] == 0 and \
+           input_folds[6] == 0:
 
-            compatible.append(3)
+           compatible.append(3)
 
-        if (input_folds[2] == 0 and \
-            input_folds[3] == 2 and \
-            input_folds[4] == 0 and \
-            input_folds[6] == 0):
+        if input_folds[2] == 0 and \
+           input_folds[3] in (2, 3) and \
+           input_folds[4] == 0 and \
+           input_folds[6] == 0:
 
-            determined.append(3)
+           determined.append(3)
 
         # check for p4
-        if (input_folds[2] == 1 and \
-            input_folds[3] == 0 and \
-            input_folds[4] <= 1 and \
-            input_folds[6] == 0) or \
-           (input_folds[2] == 0 and \
-            input_folds[3] == 0 and \
-            input_folds[4] <= 2 and \
-            input_folds[6] == 0):
+        if input_folds[2] in (0, 1) and \
+           input_folds[3] == 0 and \
+           input_folds[4] in (0, 1, 2) and \
+           input_folds[6] == 0 and \
+          (input_folds[2]+input_folds[4]) in (1, 2, 3):
 
             compatible.append(4)
 
-        if (input_folds[2] == 1 and \
-            input_folds[3] == 0 and \
-            input_folds[4] == 1 and \
-            input_folds[6] == 0) or \
-           (input_folds[2] == 0 and \
-            input_folds[3] == 0 and \
-            input_folds[4] == 2 and \
-            input_folds[6] == 0):
+        if input_folds[2] in (0, 1) and \
+           input_folds[3] == 0 and \
+           input_folds[4] in (1, 2) and \
+           input_folds[6] == 0 and \
+          (input_folds[2]+input_folds[4]) in (2, 3):
 
             determined.append(4)
 
         # check for p6
-        if  input_folds[2] <= 1 and \
-            input_folds[3] <= 1 and \
-          ((input_folds[2]+input_folds[3]) <= 2 and \
-            input_folds[4] == 0 and \
-            input_folds[6] <= 1):
+        if input_folds[2] in (0, 1) and \
+           input_folds[3] in (0, 1) and \
+           input_folds[4] == 0 and \
+           input_folds[6] in (0, 1) and \
+          (input_folds[2]+input_folds[3]+input_folds[6]) in (1, 2, 3):
 
-            compatible.append(6)
+           compatible.append(6)
 
-        if(((input_folds[2] == 1) ^ (input_folds[3] == 1)) and \
-            input_folds[4] == 0 and \
-            input_folds[6] == 1) or \
-           (input_folds[2] == 1 and \
-            input_folds[3] == 1 and \
-            input_folds[4] == 0 and \
-            input_folds[6] == 0):
+        if input_folds[2] in (0, 1) and \
+           input_folds[3] in (0, 1) and \
+           input_folds[4] == 0 and \
+           input_folds[6] in (0, 1) and \
+          (input_folds[2]+input_folds[3]+input_folds[6]) in (2, 3):
 
             determined.append(6)
 
@@ -357,7 +349,8 @@ class Layer():
         if len(sg[1]) >= 1 and (sg[0] != sg[1]):
             ctl.d(sg)
             f = open(conf.export_path+'spacegroup_ERROR_CODE01.txt', 'w')
-            f.write('')
+            f.write(str(sg[0])+"\r\n")
+            f.write(str(sg[1])+"\r\n")
             f.close()
 
         return     

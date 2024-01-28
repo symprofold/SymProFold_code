@@ -41,16 +41,13 @@ class Assembler():
             for primitive_unit_cell_molecule in primitive_unit_cell_molecules:
                 layer_flat.primitive_unit_cell.add_molecule( \
                                                 primitive_unit_cell_molecule)
-        else:
-            layer_flat.primitive_unit_cell.suggest_molecules()
-
 
         self.layers = [layer, layer_flat]
 
         self.conf = conf
-        self.alignment_pivot_pos = 0
-            # 0: pivot residue more on the side of ax0
-            # 1: pivot residue more on the side of ax1
+        self.alignment_pivot_pos = 1
+            # 0: pivot residue at the upstream side of the overlap region
+            # 1: pivot residue at the downstream side of the overlap region
 
         self.export_file_infix = export_file_infix
 
@@ -248,7 +245,8 @@ class Assembler():
         - step 3: place ax0 representants around ax1
         - step 4: place ax0 models flattened around ax1
         '''
-        if self.layers[1].symmgroup == '':
+        if self.layers[1].symmgroup == '' and \
+           self.layers[1].symmgroups_compatible == []:
             raise Exception('process_layer_lc: no symmetry group determined')
 
         sess = self.axes[0].chimerax_session
@@ -349,9 +347,9 @@ class Assembler():
 
 
                 # get pivot residue for alignment of 2 SymPlexes
-                pivot_res = self.get_alignment_pivot_res( \
-                                            ax_0_model_id, ax_1_model_id, sess)
-                pivot_res = pivot_res[self.alignment_pivot_pos]
+                self.alignment_pivot_res(ax_0_model_id, ax_1_model_id, sess)
+                pivot_res = self.axes[1].alignment_pivot_res[ \
+                                                    self.alignment_pivot_pos]
 
 
                 current_model_center = \
@@ -1051,6 +1049,7 @@ class Assembler():
 
             # create and export primitive unit cell if possible
             self.layers[1].primitive_unit_cell.definition(self.lc_offset)
+            self.layers[1].primitive_unit_cell.suggest_molecules()
             self.layers[1].primitive_unit_cell. \
                                         combine_to_model(combination_model_id)
 
@@ -1063,6 +1062,7 @@ class Assembler():
 
             # create and export primitive unit cell if possible
             self.layers[1].primitive_unit_cell.definition(self.lc_offset)
+            self.layers[1].primitive_unit_cell.suggest_molecules()
             model_complete = self.layers[1].primitive_unit_cell. \
                                         combine_to_model(combination_model_id)
 
@@ -1245,13 +1245,15 @@ class Assembler():
         return all_joins
 
 
-    def get_alignment_pivot_res(self, ax0_model_id, ax1_model_id, sess):
+    def alignment_pivot_res(self, ax0_model_id, ax1_model_id, sess):
         '''
-        Get list of 2 pivot points for alignment of 2 SymPlexes.
+        Determine list of 2 pivot points for alignment of 2 SymPlexes.
 
         Return:
-            pivot_res: [pivot residue more on the side of ax0,
-                        pivot residue more on the side of ax1]
+            pivot_res: [pivot residue at the upstream side of the
+                        overlap region,
+                        pivot residue at the downstream side of the
+                        overlap region]
         '''
         res_ov = sess.get_residue_overlap(ax0_model_id, ax1_model_id)
 
@@ -1263,20 +1265,16 @@ class Assembler():
                     ax0_model_id, ax1_model_id, res_ov, sess, 2)
 
         if len(coin_res) == 0:
-            ctl.error('Assembler: get_alignment_pivot_res: '+ \
+            ctl.error('Assembler: alignment_pivot_res: '+ \
                     'no coincident residues')
 
-        ax0_resids = sess.resids(ax0_model_id)
-        ax1_resids = sess.resids(ax1_model_id)
-
-        # determine which of both ends is inner end of overlap area
-        nterm_dist = abs(coin_res[0]-ax1_resids[0])
-        cterm_dist = abs(ax1_resids[-1]-coin_res[-1])
-
-        if nterm_dist < cterm_dist:
-            pivot_res = [coin_res[-1], coin_res[0]]
-        else:
+        if coin_res[0] < coin_res[-1]:
             pivot_res = [coin_res[0], coin_res[-1]]
+        else:
+            pivot_res = [coin_res[-1], coin_res[0]]
+
+        self.axes[0].alignment_pivot_res = pivot_res
+        self.axes[1].alignment_pivot_res = pivot_res
 
         return pivot_res
 
@@ -1293,8 +1291,13 @@ class Assembler():
                             ax.representations[ax_rep].multimer_n, \
                             ax.representations[ax_rep].domains, \
                             ax.representations[ax_rep].surface, \
-                            ax.representations[ax_rep].trans_vect
+                            ax.representations[ax_rep].trans_vect \
                             ])
+
+        json_export.append([self.axes[0].alignment_pivot_res, \
+                            self.alignment_pivot_pos, \
+                            self.axes[0].alignment_pivot_res \
+                            [self.alignment_pivot_pos]])
 
         json.dump(json_export, f)
         f.close()
