@@ -46,8 +46,10 @@ class Assembler():
 
         self.conf = conf
         self.alignment_pivot_pos = 1
-            # 0: pivot residue at the upstream side of the overlap region
-            # 1: pivot residue at the downstream side of the overlap region
+            # 0: pivot residue at the upstream side of the alignment section
+            #    (e.g. domain)
+            # 1: pivot residue at the downstream side of the alignment section
+            #    (e.g. domain)
 
         self.export_file_infix = export_file_infix
 
@@ -98,7 +100,8 @@ class Assembler():
                 return False, 2, str(e)
 
             elif str(e) == 'RotSymmAxis: init: '+ \
-                    'rotational symmetry axis not perpendicular to xy plane':
+                            'rotational symmetry axis not perpendicular to '+ \
+                            'xy plane':
                 ctl.p(str(e))
 
                 return False, 4, str(e)
@@ -111,7 +114,7 @@ class Assembler():
                 return False, 6, str(e)
 
             elif str(e) == 'RotSymmAxis: init: '+ \
-                      'z component of rotational symmetry axis is <=0':
+                            'z component of rotational symmetry axis is <=0':
                 ctl.p(str(e))
 
                 return False, 7, str(e)
@@ -120,6 +123,12 @@ class Assembler():
                 ctl.p(str(e))
 
                 return False, 9, str(e)
+
+            elif str(e) == 'Assembler: alignment_pivot_res: '+ \
+                            'no coincident residues':
+                ctl.p(str(e))
+
+                return False, 12, str(e)
 
             else:
                 ctl.error('run: Exception')
@@ -153,7 +162,7 @@ class Assembler():
                 return False, 10, str(e)
 
             elif str(e) == 'process_layer_specific: '+ \
-                                    'ax surface completely within termini':
+                            'ax surface completely within termini':
                 ctl.p(str(e))
 
                 return False, 11, str(e)
@@ -754,7 +763,7 @@ class Assembler():
 
         for deletetermini in self.conf.delete_termini_modes:
             for flatten_mode in  self.conf.flatten_modes:
-                for filter_for_export in  self.conf.filters_for_export:
+                for filter_for_export in self.conf.filters_for_export:
                     for snapshot in self.conf.snapshot_modes:
                         if snapshot == 1 and \
                                 do_snapshot_w_separated_chains == 0:
@@ -852,15 +861,16 @@ class Assembler():
             for i in ax0.representations:
                 ax0_termini = ax0.representations[i].termini
 
-                if ax0.surface[0][1] <= ax0_termini[0]:
+                if ax0.surface != None:
+                    if ax0.surface[0][1] <= ax0_termini[0]:
 
-                    raise Exception('process_layer_specific: '+ \
-                                    'ax surface completely within termini')
+                        raise Exception('process_layer_specific: '+ \
+                                        'ax surface completely within termini')
 
-                if ax0.surface[0][0] >= ax0_termini[1]:
+                    if ax0.surface[0][0] >= ax0_termini[1]:
 
-                    raise Exception('process_layer_specific: '+ \
-                                    'ax surface completely within termini')
+                        raise Exception('process_layer_specific: '+ \
+                                        'ax surface completely within termini')
 
             ax0.delete_termini()
 
@@ -871,15 +881,16 @@ class Assembler():
                 for i in ax1.representations:
                     ax1_termini = ax1.representations[i].termini
 
-                    if ax1.surface[0][1] <= ax1_termini[0]:
+                    if ax1.surface != None:
+                        if ax1.surface[0][1] <= ax1_termini[0]:
 
-                        raise Exception('process_layer_specific: '+ \
-                                        'ax surface completely within termini')
+                            raise Exception('process_layer_specific: '+ \
+                                            'ax surface completely within termini')
 
-                    if ax1.surface[0][0] >= ax1_termini[1]:
+                        if ax1.surface[0][0] >= ax1_termini[1]:
 
-                        raise Exception('process_layer_specific: '+ \
-                                        'ax surface completely within termini')
+                            raise Exception('process_layer_specific: '+ \
+                                            'ax surface completely within termini')
 
                 ax1.delete_termini()
 
@@ -1251,9 +1262,9 @@ class Assembler():
 
         Return:
             pivot_res: [pivot residue at the upstream side of the
-                        overlap region,
+                        alignment section (e.g. domain),
                         pivot residue at the downstream side of the
-                        overlap region]
+                        alignment section (e.g. domain)]
         '''
         res_ov = sess.get_residue_overlap(ax0_model_id, ax1_model_id)
 
@@ -1265,7 +1276,7 @@ class Assembler():
                     ax0_model_id, ax1_model_id, res_ov, sess, 2)
 
         if len(coin_res) == 0:
-            ctl.error('Assembler: alignment_pivot_res: '+ \
+            raise Exception('Assembler: alignment_pivot_res: '+ \
                     'no coincident residues')
 
         if coin_res[0] < coin_res[-1]:
@@ -1294,7 +1305,8 @@ class Assembler():
                             ax.representations[ax_rep].trans_vect \
                             ])
 
-        json_export.append([self.axes[0].alignment_pivot_res, \
+        if self.axes[0].alignment_pivot_res != []:
+            json_export.append([self.axes[0].alignment_pivot_res, \
                             self.alignment_pivot_pos, \
                             self.axes[0].alignment_pivot_res \
                             [self.alignment_pivot_pos]])

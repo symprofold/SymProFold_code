@@ -2,7 +2,8 @@ import os
 import sys
 sys.path.append(os.path.dirname(__file__)+'/../bib/')
 
-import ctl
+import symplex_comb
+
 from structure.modelreg import ModelReg
 from structure.axis import Axis
 from assembler import Assembler
@@ -38,7 +39,14 @@ conf.set_species('Cglu', 'Corynebacterium glutamicum primary_gene')
 conf.set_gene('Q2VRQ3')
 conf.set_symplex_path('af23/')
 conf.import_domains()
-  
+
+
+symplex0_folder = conf.symplex_path+'Q2VRQ3_x6_o/symm_060/'
+model_status0 = 0 # set oriented path
+
+symplex1_folder = conf.symplex_path+'Q2VRQ3_x3_or/symm_120/'
+model_status1 = 0 # set oriented path
+
 
 for conformation in  conf.conformations:
     model_reg = ModelReg()
@@ -47,10 +55,10 @@ for conformation in  conf.conformations:
     ax = [Axis(model_reg), Axis(model_reg)]
 
     ax[0].set_session(sess, conf)
-    ax[0].set_folder(conf.symplex_path+'Q2VRQ3_x6_o/symm_060/', 0)
+    ax[0].set_folder(symplex0_folder, model_status0)
 
     ax[1].set_session(sess, conf)
-    ax[1].set_folder(conf.symplex_path+'Q2VRQ3_x3_or/symm_120/', 0)
+    ax[1].set_folder(symplex1_folder, model_status1)
 
     ax[0].set_model_active(2)
     # ax[1].set_model_active(0)

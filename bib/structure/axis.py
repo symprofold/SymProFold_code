@@ -40,12 +40,13 @@ class Axis():
         self.domains = [ [1,10000] ]
                 # 10000 to cover all common protein lengths
         self.hide = []
-        self.surface = []
+        self.surface = None
         self.surface_resids = []
         self.passive_resids = []
 
         self.chimerax_session = ''
         self.preferred_bs = 0
+        self.alignment_pivot_res = []
 
         # orientation of chainids (counterclockwise, clockwise)
         self.chainid_orient = 1 # 1: counterclockwise
@@ -217,18 +218,19 @@ class Axis():
         '''
         Delete residues ranges that will not be included in the overall model.
         '''
-        for i, sur in enumerate(self.surface):
-            for r in self.representations:
-                if i == 0:
-                    self.chimerax_session.run('delete #'+str(r)+ \
-                        ':-1-'+str(self.surface[0][0]-1))
-                    self.chimerax_session.run('delete #'+str(r)+ \
-                        ':'+str(self.surface[-1][1]+1)+'-10000')
+        if self.surface != None:
+            for i, sur in enumerate(self.surface):
+                for r in self.representations:
+                    if i == 0:
+                        self.chimerax_session.run('delete #'+str(r)+ \
+                            ':-1-'+str(self.surface[0][0]-1))
+                        self.chimerax_session.run('delete #'+str(r)+ \
+                            ':'+str(self.surface[-1][1]+1)+'-10000')
 
-                if i < len(self.surface)-1:
-                    self.chimerax_session.run('delete #'+str(r)+ \
-                        ':'+str(self.surface[i][1]+1)+'-'+ \
-                        str(self.surface[i+1][0]-1))
+                    if i < len(self.surface)-1:
+                        self.chimerax_session.run('delete #'+str(r)+ \
+                            ':'+str(self.surface[i][1]+1)+'-'+ \
+                            str(self.surface[i+1][0]-1))
 
         return
 
@@ -245,18 +247,21 @@ class Axis():
                 subid = self.model_reg.convert_model_id_to_str(submodel_id)
                 
                 if self.model_reg.get_model(subid).modelling_completeness != 2:
+                    if self.surface != None:
+                        for i, sur in enumerate(self.surface):
+                            if i == 0:
+                                self.chimerax_session.run('delete #'+ \
+                                    str(subid)+ \
+                                    ':-1-'+str(self.surface[0][0]-1))
+                                self.chimerax_session.run('delete #'+ \
+                                    str(subid)+ \
+                                    ':'+str(self.surface[-1][1]+1)+'-10000')
 
-                    for i, sur in enumerate(self.surface):
-                        if i == 0:
-                            self.chimerax_session.run('delete #'+str(subid)+ \
-                                ':-1-'+str(self.surface[0][0]-1))
-                            self.chimerax_session.run('delete #'+str(subid)+ \
-                                ':'+str(self.surface[-1][1]+1)+'-10000')
-
-                        if i < len(self.surface)-1:
-                            self.chimerax_session.run('delete #'+str(subid)+ \
-                                ':'+str(self.surface[i][1]+1)+'-'+ \
-                                str(self.surface[i+1][0]-1))
+                            if i < len(self.surface)-1:
+                                self.chimerax_session.run('delete #'+ \
+                                    str(subid)+ \
+                                    ':'+str(self.surface[i][1]+1)+'-'+ \
+                                    str(self.surface[i+1][0]-1))
 
         return
 
@@ -353,6 +358,7 @@ class Axis():
         if part == 0 or part == 1:
             rmsds = bibpdb.get_rmsds(self.model_active_path)
             termini = molmodel.get_termini(rmsds)
+            resids = self.chimerax_session.resids((current_model_id,1))
 
             multimer_n = bib.get_multimer_n(self.model_active_path)
 
@@ -387,6 +393,7 @@ class Axis():
                                 set_session(self.chimerax_session)
             self.representations[current_model_id].set_multimer_n(multimer_n)
             self.representations[current_model_id].set_fold(self.fold)
+            self.representations[current_model_id].resids_initial = resids
             self.representations[current_model_id].set_termini(termini)
             self.representations[current_model_id].set_domains(self.domains)
             ctl.d('self.surface')
@@ -427,6 +434,7 @@ class Axis_rep(Axis):
         self.model_reg = model_reg
 
         self.model_id = -1
+        self.resids_initial = []
         self.termini = [-1, -1]
         self.multimer_n = 0
         self.rot_matrix = []
@@ -694,9 +702,12 @@ class Axis_rep(Axis):
         _surface_resids = []
 
         for i in range(0, 2000): # 2000: max value of resids
-            for s in surface:
-                if s[0] <= i <= s[1]:
-                    _surface_resids.append(i)
+            if surface == None:
+                _surface_resids.append(i)
+            else:
+                for s in surface:
+                    if s[0] <= i <= s[1]:
+                        _surface_resids.append(i)
     
         self.surface_resids = list(set(_surface_resids))
 
@@ -704,12 +715,17 @@ class Axis_rep(Axis):
 
 
     def delete_termini(self):
-        ''' Delete N-terminus and C-terminus. '''
+        '''
+        Delete N-terminus and C-terminus in relation to the full length
+        sequence.
+        '''
+        if self.conf.domains[0][0] in self.resids_initial:
+            self.chimerax_session.run('delete #'+str(self.model_id)+ \
+                                      ':-1-'+str(self.termini[0]))
 
-        self.chimerax_session.run('delete #'+str(self.model_id)+ \
-                                  ':-1-'+str(self.termini[0]))
-        self.chimerax_session.run('delete #'+str(self.model_id)+ \
-                                  ':'+str(self.termini[1])+'-10000')
+        if self.conf.domains[-1][1] in self.resids_initial:
+            self.chimerax_session.run('delete #'+str(self.model_id)+ \
+                                      ':'+str(self.termini[1])+'-10000')
 
         return
 

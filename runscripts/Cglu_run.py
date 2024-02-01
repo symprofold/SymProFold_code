@@ -2,6 +2,8 @@ import os
 import sys
 sys.path.append(os.path.dirname(__file__)+'/../bib/')
 
+import symplex_comb
+
 from structure.modelreg import ModelReg
 from structure.axis import Axis
 from assembler import Assembler
@@ -38,6 +40,13 @@ conf.set_gene('Q6QUS5')
 conf.import_domains()
 
 
+symplex0_folder = 'Q6QUS5_x6_superposed/'
+model_status0 = 1 # set oriented path
+
+symplex1_folder = 'Q6QUS5_x3_o/symm_120/'
+model_status1 = 0 # set oriented path
+
+
 for conformation in  conf.conformations:
     model_reg = ModelReg()
     sess.set_model_reg(model_reg)
@@ -45,10 +54,10 @@ for conformation in  conf.conformations:
     ax = [Axis(model_reg), Axis(model_reg)]
 
     ax[0].set_session(sess, conf)
-    ax[0].set_folder('Q6QUS5_x6_superposed/', 1) # set oriented path
+    ax[0].set_folder(symplex0_folder, model_status0)
 
     ax[1].set_session(sess, conf)
-    ax[1].set_folder('Q6QUS5_x3_o/symm_120/', 0)
+    ax[1].set_folder(symplex1_folder, model_status1)
 
     # ax[0].set_model_active(0)
     # ax[1].set_model_active(0)
