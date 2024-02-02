@@ -53,11 +53,12 @@ def get_termini(rmsds, start_res=1):
             termini[1] = r+1
 
     # signal sequence should be part of N terminus
-    if termini[0] <= 20 and \
-       rmsds[21] > cutoff_N and rmsds[22] > cutoff_N and \
-       rmsds[23] > cutoff_N and rmsds[24] > cutoff_N and \
-       rmsds[25] > cutoff_N:
-        return get_termini(rmsds, start_res=21)
+    if 21 in rmsds and 25 in rmsds:
+        if termini[0] <= 20 and \
+           rmsds[21] > cutoff_N and rmsds[22] > cutoff_N and \
+           rmsds[23] > cutoff_N and rmsds[24] > cutoff_N and \
+           rmsds[25] > cutoff_N:
+            return get_termini(rmsds, start_res=21)
 
     return termini
 
