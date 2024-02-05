@@ -16,7 +16,8 @@ def align_layer(axes, layer, conf, sess):
     models_to_align = [i for i in range(1, 1+3*ax0.fold+1)]
     models_ref = [1] + [i for i in range(2+2*ax0.fold, 1+3*ax0.fold+1)]
 
-    ax_reprs_first = layer.representations[next(iter(layer.representations))]
+    ax_reprs_first = layer.get_representations()[ \
+                                    next(iter(layer.get_representations()))]
 
     center_res = ax_reprs_first.termini[0]+ \
             round( (ax_reprs_first.termini[1]-ax_reprs_first.termini[0])/2 )
@@ -110,7 +111,8 @@ def align_layer(axes, layer, conf, sess):
     if pre_alignment_extremum_highest_coord[2] < \
         pre_alignment_extremum_lowest_coord[2]:
 
-        ax0.representations[1].flipped = not ax0.representations[1].flipped
+        ax0.get_representation((1,)).flipped = \
+                                    not ax0.get_representation((1,)).flipped
 
 
     # turn probable outside of layer model to top (estimation)
@@ -128,10 +130,10 @@ def align_layer(axes, layer, conf, sess):
         sess.close_id((m,))
 
     if cen[2] > 0:
-
-        if ax0.representations[1].flipped:
+        if ax0.get_representation((1,)).flipped:
             sess.run('turn x 180 models #'+str(intermediate_id))
-            ax0.representations[1].flipped = not ax0.representations[1].flipped
+            ax0.get_representation((1,)).flipped = \
+                                    not ax0.get_representation((1,)).flipped
             layer.flipped = not layer.flipped
 
 

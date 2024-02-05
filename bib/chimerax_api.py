@@ -1,8 +1,9 @@
 import ctl
 import geometry
 import math
-
 import re
+
+import os
 
 from chimerax.atomic import all_atomic_structures
 from chimerax.core.commands import run
@@ -74,6 +75,23 @@ class ChimeraxSession():
         else:
 
             return ret[0]
+
+
+    def open_model(self, path):
+        '''
+        Open model.
+        '''
+        opened_model_id = 0
+
+        # check if file exists
+        if not os.path.exists(path):
+            ctl.e(path)
+            ctl.error('ChimeraxSession: open_model: file does not exist.')
+
+        self.run('open "'+path+'"')
+        opened_model_id = (self.last_id(),)
+
+        return opened_model_id
 
 
     def get_xyz(self, model_id, resid, atomid='CA', \
@@ -258,13 +276,12 @@ class ChimeraxSession():
         return length
 
 
-    def last_id(self):
+    def last_id(self, range_max=99):
         '''
-        Get highest model_id of all models in a ChimeraX session that are
+        Get highest main model id of all models in a ChimeraX session that are
         smaller than range_max.
         '''
         last_model_id = 0
-        range_max = 99
 
         for m in all_atomic_structures(self.session):
             model_id = str(m).split('#')[1]

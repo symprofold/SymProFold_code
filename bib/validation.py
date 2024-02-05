@@ -66,10 +66,10 @@ def validation(model_id, model_id_restrict, axes, export_path, conf, sess):
         # calculate rmsd of axial tilt of ax1
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         for ax1_mainmodel_id in range(2, 2+axes[0].fold):
-            rotsymm_axis = axes[1].representations[ax1_mainmodel_id]. \
+            rotsymm_axis = axes[1].get_representation(ax1_mainmodel_id). \
                                                             rotsymm_ax.axis
 
-            ax1_tilt = axes[1].representations[ax1_mainmodel_id]. \
+            ax1_tilt = axes[1].get_representation(ax1_mainmodel_id). \
                                                        rotsymm_ax.get_tilt()
             ax1_tilt_sum_delta_sq += ax1_tilt**2
             ax1_tilt_sum_n += 1
@@ -86,7 +86,7 @@ def validation(model_id, model_id_restrict, axes, export_path, conf, sess):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             for ax0_mainmodel_id in range(2+axes[0].fold, \
                                           2+axes[0].fold+axes[0].fold):
-                z = axes[0].representations[ax0_mainmodel_id].trans_vect[2]
+                z = axes[0].get_representation(ax0_mainmodel_id).trans_vect[2]
                 sum_delta_sq += z**2
                 sum_n += 1
                 delta_str += str(round(z, 1))+'Å '

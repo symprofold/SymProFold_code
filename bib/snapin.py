@@ -1,10 +1,6 @@
 import bib
 import ctl
 import geometry
-import proteinmerge
-import structure.monomer
-
-import os
 
 
 def get_trans_rot_param(ax0_fold, ax1_fold, model_number):
@@ -44,13 +40,14 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
             # list of all models    
     intermediate_id = 101
 
-    ax0_center = ax0.representations[1].get_center()
+    ax0_center = ax0.get_representation((1,)).get_center()
 
 
     # define models_to_snapin
     models_to_snapin = [[] for ax in axes]
 
     for i, ax in enumerate(axes):
+
         # ax0 axis representants to snapin
         if i == 0:
             models_to_snapin[i] = [1] + \
@@ -78,8 +75,6 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
 
     # iterate  through axes
     for i, ax in enumerate(axes):
-        ax_reprs_first = ax.representations[next(iter(ax.representations))]
-
 
         # axis 0
         if i == 0:
@@ -110,6 +105,10 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
             vect_start = [ax1_rep1[0]-snapin_p_first[0], \
                           ax1_rep1[1]-snapin_p_first[1], \
                           ax1_rep1[2]-snapin_p_first[2]]
+
+        # further axes set
+        if i >= 2:
+            continue
 
         ctl.d('vect_start')
         ctl.d(vect_start)
@@ -200,7 +199,7 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
                     rot_center = sess.model_reg.get_model(ax_rep_id). \
                                  get_center()
 
-                    if axes[0].representations[1].flipped == True:
+                    if axes[0].get_representation((1,)).flipped == True:
                         sign = -1
                     else:
                         sign = 1
@@ -310,7 +309,7 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
 
                 # coords (complex center) of representant (ax_rep) after
                 # match to #2 and rotation
-                ax_rep_center = ax.representations[ax_rep_id[0]].get_center()
+                ax_rep_center = ax.get_representation(ax_rep_id).get_center()
 
 
             # translation vector to final position on snapin point

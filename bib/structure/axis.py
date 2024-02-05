@@ -111,6 +111,32 @@ class Axis():
         return
 
 
+    def add_representation(self, representation):
+        ''' Add representation. '''
+        self.representations[representation.id] = representation
+        return
+
+
+    def get_representation(self, model_id):
+        ''' Get representation. '''
+
+        model_id = self.model_reg.convert_model_id(model_id)
+        representation = self.representations[model_id]
+
+        return representation
+
+
+    def get_representations(self):
+        ''' Get representations. '''
+
+        representations = {}
+        for r in self.representations:
+            representations[self.model_reg.convert_model_id(r)] = \
+                                                self.representations[r]
+
+        return representations
+
+
     def set_path(self, path, orient):
         '''
         Set path of the input models directly without indexing the input
@@ -153,8 +179,8 @@ class Axis():
         self.surface_resids = list(set(_surface_resids))
 
         # set/update new values in all representatants
-        for ax_rep in self.representations:
-            self.representations[ax_rep].set_surface(self.surface)
+        for ax_rep in self.get_representations():
+            self.get_representation(ax_rep).set_surface(self.surface)
 
         return  
 
@@ -196,19 +222,23 @@ class Axis():
         '''
         Delete termini (N-termini and C-termini) of all representations.
         '''
-        for i in self.representations:
-            self.representations[i].delete_termini()
+        representations = self.get_representations()
+
+        for i in representations:
+            representations[i].delete_termini()
 
         return
 
 
-    def has_representatative(self, rep_id: int):
+    def has_representatative(self, rep_id):
         ''' Check if a apecific representations exists. '''
 
-        ctl.typecheck(rep_id, int)
+        rep_id = self.model_reg.convert_model_id(rep_id)
         try:
-            r = self.representations[rep_id]
+            r = self.get_representations()[rep_id]
+
             return True
+
         except KeyError:
 
             return False
@@ -220,15 +250,15 @@ class Axis():
         '''
         if self.surface != None:
             for i, sur in enumerate(self.surface):
-                for r in self.representations:
+                for r in self.get_representations():
                     if i == 0:
-                        self.chimerax_session.run('delete #'+str(r)+ \
+                        self.chimerax_session.run('delete #'+str(r[0])+ \
                             ':-1-'+str(self.surface[0][0]-1))
-                        self.chimerax_session.run('delete #'+str(r)+ \
+                        self.chimerax_session.run('delete #'+str(r[0])+ \
                             ':'+str(self.surface[-1][1]+1)+'-10000')
 
                     if i < len(self.surface)-1:
-                        self.chimerax_session.run('delete #'+str(r)+ \
+                        self.chimerax_session.run('delete #'+str(r[0])+ \
                             ':'+str(self.surface[i][1]+1)+'-'+ \
                             str(self.surface[i+1][0]-1))
 
@@ -240,26 +270,27 @@ class Axis():
         Delete in unmerged models the residue ranges that will not be
         included in the overall model.
         '''
-        for r in self.representations:
+        for r in self.get_representations():
             subids = self.chimerax_session.get_submodel_ids(r)
          
             for submodel_id in subids:
                 subid = self.model_reg.convert_model_id_to_str(submodel_id)
                 
-                if self.model_reg.get_model(subid).modelling_completeness != 2:
+                if self.model_reg.get_model(submodel_id). \
+                                                modelling_completeness != 2:
                     if self.surface != None:
                         for i, sur in enumerate(self.surface):
                             if i == 0:
                                 self.chimerax_session.run('delete #'+ \
-                                    str(subid)+ \
+                                    subid+ \
                                     ':-1-'+str(self.surface[0][0]-1))
                                 self.chimerax_session.run('delete #'+ \
-                                    str(subid)+ \
+                                    subid+ \
                                     ':'+str(self.surface[-1][1]+1)+'-10000')
 
                             if i < len(self.surface)-1:
                                 self.chimerax_session.run('delete #'+ \
-                                    str(subid)+ \
+                                    subid+ \
                                     ':'+str(self.surface[i][1]+1)+'-'+ \
                                     str(self.surface[i+1][0]-1))
 
@@ -273,148 +304,147 @@ class Axis():
                conf.export_file_prefix+'.txt'
         f = open(file, 'w')
        
-        for ax_rep in self.representations:
-            f.write(''+str([self.representations[ax_rep].termini, \
-                            self.representations[ax_rep].multimer_n, \
-                            self.representations[ax_rep].domains, \
-                            self.representations[ax_rep].surface, \
-                            self.representations[ax_rep].trans_vect])+"\r\n")
+        for ax_rep in self.get_representations():
+            f.write(''+str([self.get_representation(ax_rep).termini, \
+                            self.get_representation(ax_rep).multimer_n, \
+                            self.get_representation(ax_rep).domains, \
+                            self.get_representation(ax_rep).surface, \
+                            self.get_representation(ax_rep).trans_vect])+ \
+                            "\r\n")
         f.close()
         
         return
 
 
-    def open_model(self, part=0, register_writeprotection=True):
+    def open_model(self, register_writeprotection=True, split=True):
         '''
         Open axis model and create new representation of axis (class Axis_rep).
         '''
-        if part == 0 or part == 1:
 
-            # check if file exists
-            if not os.path.exists(self.model_active_path):
-                ctl.e(self.model_active_path)
-                ctl.error('open_model: file does not exist.')
+        # check if file exists
+        if not os.path.exists(self.model_active_path):
+            ctl.e(self.model_active_path)
+            ctl.error('Axis: open_model: file does not exist.')
 
-            self.chimerax_session.run('open '+self.model_active_path)
-            current_model_id = self.chimerax_session.last_id()
+        opened_model_id = self.chimerax_session.open_model( \
+                                                    self.model_active_path)
 
-            self.chimerax_session.run('cofr 0,0,0 showPivot 10,0.3')    
-
-
-            if self.conf.export_ax_predictions == True:
-                filesystem.create_folder( \
-                        [self.conf.export_path_ax_predictions])
-
-                # path to original predicted model file
-                if '_or' in self.model_active_path:
-                    file_to_export = self.model_active_path. \
-                            replace('_or', ''). \
-                            replace('_o', ''). \
-                            replace('symm_180/', ''). \
-                            replace('symm_120/', ''). \
-                            replace('symm_090/', ''). \
-                            replace('symm_060/', ''). \
-                            replace('symm_045/', ''). \
-                            replace('_x6_superposed', '_x3')
-
-                    folder = file_to_export.split('/')[-2]
-                    file_to_export = file_to_export.replace( \
-                                        folder+'/', folder+'/'+folder+'/')
-
-                else:
-                    file_to_export = self.model_active_path. \
-                            replace('_o', ''). \
-                            replace('symm_180/', ''). \
-                            replace('symm_120/', ''). \
-                            replace('symm_090/', ''). \
-                            replace('symm_060/', ''). \
-                            replace('symm_045/', ''). \
-                            replace('_x6_superposed', '_x3')
-
-                dest_filename = file_to_export.split('/')[-2]+'_'+ \
-                                    file_to_export.split('/')[-1]
+        self.chimerax_session.run('cofr 0,0,0 showPivot 10,0.3')    
 
 
-                # check if file already exists to export this model only once
-                files = sorted(glob.glob(
-                        self.conf.export_path_ax_predictions+dest_filename))
+        if self.conf.export_ax_predictions == True:
+            filesystem.create_folder([self.conf.export_path_ax_predictions])
 
-                if len(files) == 0:
-                    shutil.copy(file_to_export, \
-                                self.conf.export_path_ax_predictions+ \
-                                    dest_filename)
-                else:
-                    ctl.d('file already exists')
-                    ctl.d(files)
+            # path to original predicted model file
+            if '_or' in self.model_active_path:
+                file_to_export = self.model_active_path. \
+                        replace('_or', ''). \
+                        replace('_o', ''). \
+                        replace('symm_180/', ''). \
+                        replace('symm_120/', ''). \
+                        replace('symm_090/', ''). \
+                        replace('symm_060/', ''). \
+                        replace('symm_045/', ''). \
+                        replace('_x6_superposed', '_x3')
+
+                folder = file_to_export.split('/')[-2]
+                file_to_export = file_to_export.replace( \
+                                    folder+'/', folder+'/'+folder+'/')
+
+            else:
+                file_to_export = self.model_active_path. \
+                        replace('_o', ''). \
+                        replace('symm_180/', ''). \
+                        replace('symm_120/', ''). \
+                        replace('symm_090/', ''). \
+                        replace('symm_060/', ''). \
+                        replace('symm_045/', ''). \
+                        replace('_x6_superposed', '_x3')
+
+            dest_filename = file_to_export.split('/')[-2]+'_'+ \
+                                file_to_export.split('/')[-1]
+
+
+            # check if file already exists to export this model only once
+            files = sorted(glob.glob(
+                    self.conf.export_path_ax_predictions+dest_filename))
+
+            if len(files) == 0:
+                shutil.copy(file_to_export, \
+                            self.conf.export_path_ax_predictions+ \
+                                dest_filename)
+            else:
+                ctl.d('file already exists')
+                ctl.d(files)
 
               
-        if part == 0 or part == 2:
-            self.chimerax_session.run('hide #'+str(current_model_id)+ \
+        if self.conf.performance == False:
+            self.chimerax_session.run('hide #'+str(opened_model_id[0])+ \
                                       ' atoms')
-            self.chimerax_session.run('show #'+str(current_model_id)+ \
+            self.chimerax_session.run('show #'+str(opened_model_id[0])+ \
                                       ' cartoons')
-            self.chimerax_session.run('split #'+str(current_model_id))
+        elif self.conf.performance == True:
+            self.chimerax_session.run('hide #'+str(opened_model_id[0])+ \
+                                      ' atoms')
+            self.chimerax_session.run('hide #'+str(opened_model_id[0])+ \
+                                      ' cartoons')
 
-        if part == 0 or part == 1:
-            rmsds = bibpdb.get_rmsds(self.model_active_path)
-            termini = molmodel.get_termini(rmsds)
-            resids = self.chimerax_session.resids((current_model_id,1))
-
-            multimer_n = bib.get_multimer_n(self.model_active_path)
-
-
-            # create Axis_rep object and set this model as representative of
-            # respective axis
-            self.representations[current_model_id] = \
-                        Axis_rep(self.model_reg)
-
-            # set abstract Axis object
-            self.representations[current_model_id].axis = self
-
-            # register model in model_reg and assign Monomer objects to
-            # Axis_rep object
-            self.model_reg.add_model(current_model_id, \
-                    self.representations[current_model_id], \
-                    'axis', register_writeprotection)
-
-            for i in range(1, multimer_n+1):
-                current_model_monomer = Monomer(self.model_reg, \
-                                                current_model_id)
-                self.model_reg.add_model((current_model_id, i), \
-                    current_model_monomer, 'monomer', register_writeprotection)
-                self.representations[current_model_id]. \
-                    monomers[(current_model_id, i)] = current_model_monomer
+        if split:
+            self.chimerax_session.run('split #'+str(opened_model_id[0]))
 
 
-            # set parameter of Axis_rep object
-            self.representations[current_model_id]. \
-                                set_model_id(current_model_id)
-            self.representations[current_model_id]. \
-                                set_session(self.chimerax_session)
-            self.representations[current_model_id].set_multimer_n(multimer_n)
-            self.representations[current_model_id].set_fold(self.fold)
-            self.representations[current_model_id].resids_initial = resids
-            self.representations[current_model_id].set_termini(termini)
-            self.representations[current_model_id].set_domains(self.domains)
-            ctl.d('self.surface')
-            ctl.d(self.surface)
-            self.representations[current_model_id].set_surface(self.surface)
-            ctl.d(self.representations[current_model_id].surface)
-            ctl.d(self.representations[current_model_id].surface_resids)
-            self.representations[current_model_id].set_domain_binding_status()
-            self.representations[current_model_id].conf = self.conf
-            self.representations[current_model_id].init_referenceframe()
-            self.representations[current_model_id].init_rotsymm_axis()
+        rmsds = bibpdb.get_rmsds(self.model_active_path)
+        termini = molmodel.get_termini(rmsds)
+        resids = self.chimerax_session.resids((opened_model_id[0],1))
+
+        multimer_n = bib.get_multimer_n(self.model_active_path)
 
 
-            if len(self.representations) == 1:
-                self.representations_order[0] = \
-                        self.representations[current_model_id]
-            else:
-                self.representations_order[1][current_model_id] = \
-                        self.representations[current_model_id]
+        # create Axis_rep object and set it as representative of
+        # respective axis
+        ax_rep = Axis_rep(self.model_reg)
+        ax_rep.set_id(opened_model_id)
+        self.add_representation(ax_rep)
+
+        # set abstract Axis object
+        ax_rep.axis = self
+
+        # register model in model_reg and assign Monomer objects to
+        # Axis_rep object
+        self.model_reg.add_model(opened_model_id, ax_rep, \
+                                        'axis', register_writeprotection)
+
+        for i in range(1, multimer_n+1):
+            current_model_monomer = Monomer(self.model_reg, opened_model_id[0])
+            self.model_reg.add_model((opened_model_id[0], i), \
+                current_model_monomer, 'monomer', register_writeprotection)
+            ax_rep.monomers[(opened_model_id[0], i)] = current_model_monomer
+
+
+        # set parameter of Axis_rep object
+        ax_rep.set_session(self.chimerax_session)
+        ax_rep.set_multimer_n(multimer_n)
+        ax_rep.set_fold(self.fold)
+        ax_rep.resids_initial = resids
+        ax_rep.set_termini(termini)
+        ax_rep.set_domains(self.domains)
+        ctl.d('self.surface')
+        ctl.d(self.surface)
+        ax_rep.set_surface(self.surface)
+        ctl.d(ax_rep.surface)
+        ctl.d(ax_rep.surface_resids)
+        ax_rep.set_domain_binding_status()
+        ax_rep.conf = self.conf
+        ax_rep.init_referenceframe()
+        ax_rep.init_rotsymm_axis()
+
+
+        if len(self.get_representations()) == 1:
+            self.representations_order[0] = ax_rep
+        else:
+            self.representations_order[1][opened_model_id[0]] = ax_rep
          
-        return current_model_id
+        return ax_rep
 
 
 class Axis_rep(Axis):
@@ -433,6 +463,7 @@ class Axis_rep(Axis):
         self.axis = 0 # underlying abstract Axis object
         self.model_reg = model_reg
 
+        self.id = None
         self.model_id = -1
         self.resids_initial = []
         self.termini = [-1, -1]
@@ -490,8 +521,26 @@ class Axis_rep(Axis):
             return -1
 
 
+    def set_id(self, model_id):
+        ''' Set model id as tuple. '''
+        model_id = self.model_reg.convert_model_id(model_id)
+        self.id = model_id
+
+        self.set_model_id(model_id[0])
+
+        return
+
+
+    @property
+    def idstr(self):
+        ''' Get model id in string representation. '''
+        model_id_str = self.model_reg.convert_model_id_to_str(self.id)
+
+        return model_id_str
+
+
     def set_model_id(self, model_id):
-        ''' Set model id. '''
+        ''' Set main model id. '''
         ctl.typecheck(model_id, int)
         self.model_id = model_id
         return
@@ -499,7 +548,7 @@ class Axis_rep(Axis):
 
     def set_session(self, session):
         ''' Set ChimeraX session. '''
-        self.chimerax_session = session # class
+        self.chimerax_session = session # object
         return
 
 

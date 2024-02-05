@@ -39,10 +39,33 @@ class Layer():
         return
 
 
-    def add_representation(self, representation, number):
+    def add_representation(self, representation):
         ''' Add representation. '''
-        self.representations[number] = representation
+        self.representations[representation.id] = representation
         return
+
+
+    def get_representation(self, model_id):
+        ''' Get representation. '''
+
+        model_reg = self.axes[0].model_reg
+        model_id = model_reg.convert_model_id(model_id)
+
+        representation = self.representations[model_id]
+
+        return representation
+
+
+    def get_representations(self):
+        ''' Get representations. '''
+
+        model_reg = self.axes[0].model_reg
+
+        representations = {}
+        for r in self.representations:
+            representations[r] = self.representations[r]
+
+        return representations
 
 
     def add_axis(self, axis):
@@ -60,6 +83,22 @@ class Layer():
         return
 
 
+    def ax_models(self, ax):
+        '''
+        Get all representants of a given Axis object ax that are assigned to
+        this layer.
+        '''
+        ax_model_ids = sorted(list( \
+                set(self.get_representations().keys()) & \
+                set(ax.get_representations().keys()) ))
+
+        ax_models_ = []
+        for model_id in ax_model_ids:
+            ax_models_.append(self.get_representation(model_id))
+
+        return ax_models_
+
+
     def calc_refpoint_constant(self, lc_offset=0):
         ''' Calculate reference point constant. '''
 
@@ -67,12 +106,12 @@ class Layer():
         distsum = 0
         distances = ''
 
-        for i,model_id in enumerate(self.representations):
+        for i,model in enumerate(self.ax_models(self.axes[0])):
             if i == 0:
                 continue
 
             model_n += 1   
-            model_xyz = self.representations[model_id].trans_vect
+            model_xyz = model.trans_vect
 
             d = geometry.dist(model_xyz, [0, 0, 0])
             distances = distances+str(round(d/10, 3))+'nm, '
@@ -96,14 +135,15 @@ class Layer():
         distsum = 0
         distances = ''
 
-        for i,model_id in enumerate(self.representations):
+        ax0_models = self.ax_models(self.axes[0])
+
+        for i,model in enumerate(ax0_models):
             if i == 0:
-                model_neighbour_xyz = \
-                        list(self.representations.items())[-1][1].trans_vect
+                model_neighbour_xyz = ax0_models[-1].trans_vect
                 continue
 
             model_n += 1   
-            model_xyz = self.representations[model_id].trans_vect
+            model_xyz = model.trans_vect
 
             # symmetry group p6 with 3fold axis0 and 2fold axis1
             if self.axes[0].fold == 3 and self.axes[1].fold == 2:
@@ -134,10 +174,10 @@ class Layer():
         '''
         seq_range = [-1, -1]
 
-        ax0_repr = self.axes[0].representations[1]
+        ax0_repr = self.axes[0].get_representations()[(1,)]
 
         if len(self.axes) > 1:
-            ax1_repr = self.axes[1].representations[2]
+            ax1_repr = self.axes[1].get_representations()[(2,)]
             seq_range[0] = min(ax0_repr.termini[0], ax1_repr.termini[0])
             seq_range[1] = max(ax0_repr.termini[1], ax1_repr.termini[1])
         else:
@@ -153,7 +193,7 @@ class Layer():
         ''' Export parameter to biochem_properties file. '''
 
         ctl.d('export_param')
-        ctl.d(self.representations)
+        ctl.d(self.get_representations())
         self.calc_lattice_constant(lc_offset)
 
         # area of unit cell
