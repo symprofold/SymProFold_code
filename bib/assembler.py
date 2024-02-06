@@ -892,21 +892,24 @@ class Assembler():
 
             if flatten_mode == 0:
                 modes_connect = ['default']
-            if flatten_mode == 1:
+            elif flatten_mode == 1:
                 modes_connect = ['flattened', 'default']
-            if flatten_mode >= 2:
+            elif flatten_mode >= 2:
                 modes_connect = ['snapin', 'flattened', 'default']
 
-            for mode_connect in modes_connect:
-                for r in ax0.get_representations():
-                    if 1+1*ax0.fold < r[0] <= 1+2*ax0.fold and \
-                       ('flattened' in modes_connect or \
-                        'snapin' in modes_connect):
-                        continue
+            if flatten_mode == 0:
+                ax0_models = self.layers[0].ax_models(ax0)
+                        # ax0 models assigned to layer
+            elif flatten_mode >= 1:
+                ax0_models = self.layers[1].ax_models(ax0)
+                        # ax0 models assigned to layer_flat
 
+
+            for mode_connect in modes_connect:
+                for r in ax0_models:
                     ctl.d('mode_connect:')
                     ctl.d(mode_connect)
-                    ax0.get_representation(r).combine_chains_all(mode_connect)
+                    r.combine_chains_all(mode_connect)
 
 
             # search for protein fragments that can be merged and merge them
