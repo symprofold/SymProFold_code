@@ -972,39 +972,26 @@ class Assembler():
             if len(self.axes) > 1:
 
                 if filter_for_export == 0:
-                    if flatten_mode != 3:
-                        ax0.chimerax_session.run(\
-                            'combine #1 '+ \
-                            '#'+str(2+          0*ax0.fold)+ \
-                            '-'+str(1+          1*ax0.fold)+' '+ \
-                            '#'+str(2+(1+flatten)*ax0.fold)+ \
-                            '-'+str(1+(2+flatten)*ax0.fold)+ \
-                            ' close false modelId #'+str(combination_model_id))
+                    if flatten == 0:
+                        layer_models = self.layers[0].get_representations()
+
+                    elif flatten == 1:
+                        layer_models = self.layers[1].get_representations()
+
+                    ax0.chimerax_session.combine_models( \
+                            layer_models.values(), combination_model_id)
     
-                    if flatten_mode == 3:
-                        ax0.chimerax_session.run(\
-                            'combine #1 '+ \
-                            '#'+str(2+          0*ax0.fold)+ \
-                            '-'+str(1+          1*ax0.fold)+' '+ \
-                            '#'+str(2+(1+flatten)*ax0.fold)+ \
-                            '-'+str(1+(2+flatten+5)*ax0.fold)+ \
-                            ' close false modelId #'+str(combination_model_id))
+                # axis 1
+                if filter_for_export == 1:
+                    layer_ax1_models = self.layers[0].ax_models(ax1)
+                    ax0.chimerax_session.combine_models( \
+                            layer_ax1_models, combination_model_id)
 
                 # axis 0
-                if filter_for_export == 1:
-                    ax0.chimerax_session.run(\
-                        'combine '+ \
-                        '#'+str(2+0*ax0.fold)+ \
-                        '-'+str(1+1*ax0.fold)+ \
-                        ' close false modelId #'+str(combination_model_id))
-
-                # axis 1
                 if filter_for_export == 2:
-                    ax0.chimerax_session.run( \
-                        'combine #1 '+ \
-                        '#'+str(2+1*ax0.fold)+ \
-                        '-'+str(1+2*ax0.fold)+ \
-                        ' close false modelId #'+str(combination_model_id))
+                    layer_ax0_models = self.layers[0].ax_models(ax0)
+                    ax0.chimerax_session.combine_models( \
+                            layer_ax0_models, combination_model_id)
 
 
             if len(self.axes) == 1:

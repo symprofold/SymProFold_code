@@ -496,6 +496,33 @@ class ChimeraxSession():
         return angle_z, dist
 
 
+    def ids_str(self, model_objects):
+        '''
+        Create ChimeraX string of model ids from given list of model objects.
+        '''
+        ids_str_ = ''
+
+        for m in model_objects:
+            ids_str_ += ('#'+m.idstr+' ')
+
+        ids_str_ = ids_str_[:-1]
+
+        return ids_str_
+
+
+    def combine_models(self, models, combined_model_id):
+        '''
+        Combine models to model_id_combined.
+        '''
+        models_idstr = self.ids_str(models)
+        combined_model_id = self.model_reg.convert_model_id(combined_model_id)
+
+        self.run('combine '+models_idstr+ \
+                        ' close false modelId #'+str(combined_model_id[0]))
+
+        return
+
+
     def combine(self, ids, intermediate_id):
         '''
         Combine all models in ChimeraX session and code ids in chainid.
