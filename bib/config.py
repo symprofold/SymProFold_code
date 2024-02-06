@@ -15,7 +15,7 @@ class Config():
         ''' Initialization of the Config class. '''
 
         self.export_ax_predictions = True
-        self.version = 'v67'
+        self.version = 'v68'
 
         self.main_dir = filesystem.clean_path( \
                 os.path.dirname(os.path.realpath(__file__))+'/../')
@@ -40,7 +40,7 @@ class Config():
         self.gene = ''
         self.domains = []
 
-        self.performance = True
+        self.performance = False
 
         self.fn_infix_termini = ['_FL', '']
 

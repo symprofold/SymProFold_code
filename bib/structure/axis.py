@@ -442,8 +442,8 @@ class Axis():
         if len(self.get_representations()) == 1:
             self.representations_order[0] = ax_rep
         else:
-            self.representations_order[1][opened_model_id[0]] = ax_rep
-         
+            self.representations_order[1][opened_model_id] = ax_rep
+
         return ax_rep
 
 

@@ -83,14 +83,19 @@ class Layer():
         return
 
 
-    def ax_models(self, ax):
+    def ax_models(self, ax, order=False):
         '''
         Get all representants of a given Axis object ax that are assigned to
         this layer.
         '''
-        ax_model_ids = sorted(list( \
-                set(self.get_representations().keys()) & \
-                set(ax.get_representations().keys()) ))
+        if order == False:
+            ax_model_ids = sorted(list( \
+                    set(self.get_representations().keys()) & \
+                    set(ax.get_representations().keys()) ))
+        else:
+            ax_model_ids = sorted(list( \
+                    set(self.get_representations().keys()) & \
+                    set(ax.representations_order[order].keys()) ))
 
         ax_models_ = []
         for model_id in ax_model_ids:

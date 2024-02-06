@@ -530,35 +530,34 @@ class Assembler():
             # step 3: place ax0 representants around ax1
             # ------------------------------------------
             if max(self.conf.flatten_modes) >= 0:
+                ax1_models = layer.ax_models(ax1)
 
-                for ax1_mainmodel_id in range(2, 2+ax0.fold):
-                        # start with 2, because model_id of first axis1 is 2
-
+                for ax1_model_i,ax1_model in enumerate(ax1_models):
                     ax0_current_model = ax0.open_model()
                     layer.add_representation(ax0_current_model)
                     bib.format_model(ax0_current_model.id, ax0)
 
                     source_submodel_id = self.ax1_contact_submodel_1( \
-                                        ax1_mainmodel_id-1, \
+                                        ax1_model_i+1, \
                                         self.contact_submodel_orientation, \
                                         ax1.fold)
-                    dest_submodel_id = (((ax1_mainmodel_id-1)+ \
+                    dest_submodel_id = (((ax1_model_i+1)+ \
                         ax0_pairing_offset+orientation_offset-1)%ax0.fold+1)
 
                     # add ax0 rep to corresponding ax1 rep
                     # use correct submodels of each rep
-                    # seting connections is done by ax_a_model_add_ax_b()
+                    # setting connections is done by ax_a_model_add_ax_b()
                     self.ax_a_model_add_ax_b(
                             ax1, ax0, \
-                            (ax1_mainmodel_id, source_submodel_id), \
+                            (ax1_model.id[0], source_submodel_id), \
                             (ax0_current_model.id[0], dest_submodel_id)
                             )
 
                     # set name to submodels of ax0 representant
                     for i in range(1,1+ax0.fold):
                         sess.run('rename #'+ \
-                                ax1_current_model.idstr+'.'+str(i)+ \
-                                ' ax'+str(ax1_mainmodel_id)+'mol'+str(i))
+                                ax0_current_model.idstr+'.'+str(i)+ \
+                                ' ax'+str(2+ax1_model_i)+'mol'+str(i))
 
                     # determine rotation of ax0 representant
                     re = sess.run('measure rotation #'+ \
@@ -572,15 +571,12 @@ class Assembler():
             # step 4: place ax0 models flattened around ax1
             # ---------------------------------------------
             if max(self.conf.flatten_modes) >= 0:
+                ax0_models = layer.ax_models(ax0, order=1)
+                ax1_models = layer.ax_models(ax1)
 
-                for ax1_mainmodel_id in range(2+ax0.fold, 2+ax0.fold+ax0.fold):
-                    # ax1_mainmodel_id: id of unflattened representant
-
+                for ax0_model_i,ax0_model in enumerate(ax0_models):
                     ax0_current_model = ax0.open_model()
-                    ax0_current_model.set_trans_vect( \
-                            ax0.get_representation( \
-                                    (ax0_current_model.id[0]-ax0.fold,)). \
-                            trans_vect)
+                    ax0_current_model.set_trans_vect(ax0_model.trans_vect)
 
                     layer_flat.add_representation(ax0_current_model)
                     bib.format_model(ax0_current_model.id, ax0)
@@ -606,30 +602,26 @@ class Assembler():
                     for i in range(1, 1+ax0.fold):
                         sess.run( \
                             'rename #'+ax0_current_model.idstr+'.'+str(i)+ \
-                            ' ax'+str(ax1_mainmodel_id)+'mol'+str(i))
+                            ' ax'+str(2+ax0.fold+ax1_model_i)+'mol'+str(i))
 
-                    sess.run('move x '+ \
-                        str(ax0.get_representation(ax1_mainmodel_id). \
-                                trans_vect[0])+ \
+                    sess.run('move x '+str(ax0_model.trans_vect[0])+ \
                         ' models #'+ax0_current_model.idstr)
-                    sess.run('move y '+ \
-                        str(ax0.get_representation(ax1_mainmodel_id). \
-                                trans_vect[1])+ \
+                    sess.run('move y '+str(ax0_model.trans_vect[1])+ \
                         ' models #'+ax0_current_model.idstr)
 
                     # set connections, use correct submodels for each
                     # representant
-                    source_submodel_id = ((ax1_mainmodel_id-1)+ \
+                    source_submodel_id = ((ax0_model_i+1)+ \
                             ax0_pairing_offset+orientation_offset-1)%ax0.fold+1
 
                     dest_submodel_id = self.ax1_contact_submodel_1( \
-                            ax1_mainmodel_id-1-ax0.fold, \
+                            ax0_model_i+1, \
                             self.contact_submodel_orientation, \
                             ax1.fold)
 
                     ax0_current_model.set_connection(
                         (ax0_current_model.id[0], source_submodel_id), \
-                        (ax1_mainmodel_id-ax0.fold, dest_submodel_id), \
+                        (ax1_models[ax0_model_i].id[0], dest_submodel_id), \
                         'flattened')
 
             meta_path = self.conf.get_struct_coll_meta_path()
@@ -705,7 +697,7 @@ class Assembler():
         aligned_file = sorted(glob.glob(self.conf.layer_aligned_raw_path))
         
 
-        #snapin ax0s to ref points
+        # snapin ax0s to ref points
         snapin_file = sorted(glob.glob(self.conf.layer_snapin_raw_path))
         if max(self.conf.flatten_modes) >= 2:
             ax0.chimerax_session. \
@@ -1117,29 +1109,58 @@ class Assembler():
         modes: 'default', 'flattened', 'snapin'
         '''
         ax0 = self.axes[0]
+        ax1 = self.axes[1]
         all_joins = []
 
+
+        ax0_models = ax0.get_representations()
+        ax1_models = ax1.get_representations()
+
+        layer_models = self.layers[0].get_representations()
+        layer_flat_models = self.layers[1].get_representations()
+
+        ax0_model_ids = [ax0_models[m].id[0] for m in ax0_models]
+        ax1_model_ids = [ax1_models[m].id[0] for m in ax1_models]
+        layer_model_ids = [layer_models[m].id[0] for m in layer_models]
+        layer_flat_model_ids = [layer_flat_models[m].id[0] \
+                                            for m in layer_flat_models]
+
+        # model ids not assigned to a layer (e.g. models used for
+        # completion of outer chains)
+        ax_not_layer_ids = sorted(list( \
+                (set(ax0_model_ids) | set(ax1_model_ids)) - \
+                (set(layer_model_ids) | set(layer_flat_model_ids)) ))
+
+
         if flatten == 0:
+
             # axis 0
-            ids1 = [1] + [k for k in range(2+1*ax0.fold, 1+2*ax0.fold+1)]
+            layer_ax0_models = self.layers[0].ax_models(ax0)
+            ids1 = [m.id[0] for m in layer_ax0_models]
+
             # others
-            ids2 =       [k for k in range(2+0*ax0.fold, 1+1*ax0.fold+1)]+ \
-                         [k for k in range(2+3*ax0.fold, 1+10*ax0.fold+1)]
+            layer_ax1_models = self.layers[0].ax_models(ax1)
+            ids2 = [m.id[0] for m in layer_ax1_models]+ax_not_layer_ids
+
 
         ids1_part2 = []
         if flatten == 1:
+
             # axis 0
-            ids1 = [1] + [k for k in range(2+2*ax0.fold, 1+3*ax0.fold+1)]
+            layer_flat_ax0_models = self.layers[1].ax_models(ax0)
+            ids1 = [m.id[0] for m in layer_flat_ax0_models]
 
             # others
-            ids2 =       [k for k in range(2+0*ax0.fold, 1+1*ax0.fold+1)]+ \
-                         [k for k in range(2+3*ax0.fold, 1+10*ax0.fold+1)]
-                                # also include completed chains
-                                # (completion of ax0)
+            layer_flat_ax1_models = self.layers[1].ax_models(ax1)
+            ids2 = [m.id[0] for m in layer_flat_ax1_models]+ax_not_layer_ids
+
 
             # completed chains (completion of ax1)
-            ids1_part2 = [k for k in range(2+0*ax0.fold, 1+1*ax0.fold+1)]
-            ids2_part2 = [k for k in range(2+3*ax0.fold, 1+10*ax0.fold+1)]
+            layer_flat_ax1_models = self.layers[1].ax_models(ax1)
+            ids1_part2 = [m.id[0] for m in layer_flat_ax1_models]
+            ids2_part2 = ax_not_layer_ids
+                    # model ids not assigned to a layer (e.g. models used for
+                    # completion of outer chains)
 
 
         for id1 in ids1:
