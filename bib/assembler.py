@@ -740,7 +740,7 @@ class Assembler():
         do_snapshot_w_separated_chains = 1
 
         for deletetermini in self.conf.delete_termini_modes:
-            for flatten_mode in  self.conf.flatten_modes:
+            for flatten_mode in self.conf.flatten_modes:
                 for filter_for_export in self.conf.filters_for_export:
                     for snapshot in self.conf.snapshot_modes:
                         if snapshot == 1 and \
@@ -790,6 +790,12 @@ class Assembler():
             # same molecule and merge them
 
         validation_result_tile = -1
+
+        if flatten > len(self.layers):
+            ctl.error('Assembler: process_layer_specific: '+ \
+                        'flatten > len(layers)')
+        layer = self.layers[flatten]
+
 
         # for snapin/tile, completed chains, primitive unit cell
         if flatten_mode >= 2 and self.lc_offset != 0:
@@ -935,7 +941,7 @@ class Assembler():
         # complete chains
         if flatten_mode == 3: 
             complete_outer_chains.complete_outer_chains( \
-                    self, self.contact_submodel_orientation)
+                    self, layer, self.contact_submodel_orientation)
 
             # search for protein fragments that can be merged and merge them
             if merge_likely_related_fragments:

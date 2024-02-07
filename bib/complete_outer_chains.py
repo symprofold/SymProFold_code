@@ -3,36 +3,37 @@ import ctl
 import export
 
 
-def complete_outer_chains(assembler, contact_submodel_orientation):
+def complete_outer_chains(assembler, layer, contact_submodel_orientation):
     ''' Complete outer chains of layer model. '''
+
+    max_clashes = 5000
+            # value set to allow for an acceptable level of clashes
 
     ax0 = assembler.axes[0]
     ax1 = assembler.axes[1]
 
+
     ax0_incomplete_models = []
+    ax0_models = layer.ax_models(ax0, order=1)
 
-    for r in ax0.get_representations():
-        if r[0] > 1+2*ax0.fold:
+    for r in ax0_models:
+        for i_id in ax0.chimerax_session.get_submodel_ids(r.id):
+            i = ax0.chimerax_session.model_reg. \
+                convert_model_id_to_str(i_id)
+            
+            conn_ = r.get_connection(i, 'snapin')
+            if conn_ != False:
+                conn = conn_
 
-            for i_id in ax0.chimerax_session.get_submodel_ids(r):
-                i = ax0.chimerax_session.model_reg. \
-                    convert_model_id_to_str(i_id)
-                
-                conn_ = ax0.get_representation(r).get_connection(i, 'snapin')
-                if conn_ != False:
-                    conn = conn_
-
-                # check if models already merged
-                elif i_id not in ax0.chimerax_session. \
-                        model_reg.get_model(i_id[0]).connected:
-                    ax0_incomplete_models.append(i)
-                    ctl.d('incomplete model ax0: '+i)                
-                    ctl.d(ax0_incomplete_models)
+            # check if models already merged
+            elif i_id not in ax0.chimerax_session. \
+                    model_reg.get_model(i_id[0]).connected:
+                ax0_incomplete_models.append(i)
+                ctl.d('incomplete model ax0: '+i)                
+                ctl.d(ax0_incomplete_models)
 
     ctl.d(ax0_incomplete_models)
 
-    # value set to allow for an acceptable level of small clashes
-    max_clashes = 5000
 
     for matchto in ax0_incomplete_models:
         contact_model21 = assembler.ax1_contact_submodel_0( \
@@ -78,31 +79,29 @@ def complete_outer_chains(assembler, contact_submodel_orientation):
 
 
     ax1_incomplete_models = []
+    ax1_models = layer.ax_models(ax1)
 
-    for r in ax1.get_representations():
-        if 1+0*ax0.fold < r[0] <= 1+1*ax0.fold:
+    for r in ax1_models:
+        for i_id in ax0.chimerax_session.get_submodel_ids(r.id):
+            i = ax0.chimerax_session.model_reg. \
+                convert_model_id_to_str(i_id)
 
-            for i_id in ax0.chimerax_session.get_submodel_ids(r):
-                i = ax0.chimerax_session.model_reg. \
-                    convert_model_id_to_str(i_id)
+            conn_ = r.get_connection(i, 'snapin')
+            if conn_ != False:
+                conn = conn_
 
-                conn_ = ax1.get_representation(r).get_connection(i, 'snapin')
-                if conn_ != False:
-                    conn = conn_
-
-                # check if models already merged
-                elif i_id not in ax0.chimerax_session. \
-                         model_reg.get_model(i_id[0]).connected:
-                    ctl.d(i_id)
-                    ax1_incomplete_models.append(i)
-                    ctl.d('incomplete model ax1: '+i)  
+            # check if models already merged
+            elif i_id not in ax0.chimerax_session. \
+                     model_reg.get_model(i_id[0]).connected:
+                ctl.d(i_id)
+                ax1_incomplete_models.append(i)
+                ctl.d('incomplete model ax1: '+i)  
 
 
     ctl.d('ax0_incomplete_models')
     ctl.d(ax0_incomplete_models)
     ctl.d('ax1_incomplete_models')
     ctl.d(ax1_incomplete_models)
-
 
 
     for matchto in ax1_incomplete_models:
@@ -133,7 +132,7 @@ def complete_outer_chains(assembler, contact_submodel_orientation):
 
         clashes = ax0.chimerax_session.run('clashes #'+ \
                                  last_model.idstr+'.'+str(contact_model12)+ \
-                                 ' restrict cross ignoreHiddenModels true'+'')
+                                 ' restrict cross ignoreHiddenModels true')
 
         ax0.chimerax_session.close_id(last_model.id[0]+1)
         ax0.chimerax_session.run('show #'+str(matchto)+' models')
