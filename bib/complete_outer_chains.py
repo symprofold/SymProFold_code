@@ -12,6 +12,9 @@ def complete_outer_chains(assembler, layer, contact_submodel_orientation):
     ax0 = assembler.axes[0]
     ax1 = assembler.axes[1]
 
+    layer_models = layer.get_representations().values()
+    layer_models_idstr = ax0.chimerax_session.ids_str(layer_models)
+
 
     ax0_incomplete_models = []
     ax0_models = layer.ax_models(ax0, order=1)
@@ -56,19 +59,23 @@ def complete_outer_chains(assembler, layer, contact_submodel_orientation):
                 ctl.d((last_model.id[0], i))
                
 
+        # show only models assigned to layer
+        ax0.chimerax_session.run('hide '+' models')
+        ax0.chimerax_session.run('show '+layer_models_idstr+' models')
+
+        # hide matchto model and show last_model
         ax0.chimerax_session.run('hide #'+str(matchto)+' models')
+        ax0.chimerax_session.run('show #'+ \
+                        last_model.idstr+'.'+str(contact_model21)+' models')
 
-        # hide ax1 of unflattened layer
-        ax0.chimerax_session.run('hide #'+str(2+(1+0)*ax0.fold)+'-'+ \
-                                          str(1+(2+0)*ax0.fold)+' models')
-
+        # calculate clashes
         clashes = ax0.chimerax_session.run('clashes #'+ \
                             last_model.idstr+'.'+str(contact_model21)+ \
                             ' restrict cross ignoreHiddenModels true'+'')
         ax0.chimerax_session.close_id(last_model.id[0]+1)
-        ax0.chimerax_session.run('show #'+str(matchto)+' models')
-        ax0.chimerax_session.run('show #'+str(2+(1+0)*ax0.fold)+'-'+ \
-                                          str(1+(2+0)*ax0.fold)+' models')
+
+        ax0.chimerax_session.run('show '+' models')
+        ax0.chimerax_session.run('hide '+' atoms')
 
 
         if len(clashes) > max_clashes:
@@ -124,20 +131,23 @@ def complete_outer_chains(assembler, layer, contact_submodel_orientation):
                 ax0.chimerax_session.close_id((last_model.id[0], i))
            
 
+        # show only models assigned to layer
+        ax0.chimerax_session.run('hide '+' models')
+        ax0.chimerax_session.run('show '+layer_models_idstr+' models')
+
+        # hide matchto model and show last_model
         ax0.chimerax_session.run('hide #'+str(matchto)+' models')
+        ax0.chimerax_session.run('show #'+ \
+                        last_model.idstr+'.'+str(contact_model12)+' models')
 
-        # hide ax1 of unflattened layer
-        ax0.chimerax_session.run('hide #'+str(2+(1+0)*ax0.fold)+'-'+ \
-                                 str(1+(2+0)*ax0.fold)+' models')
-
+        # calculate clashes
         clashes = ax0.chimerax_session.run('clashes #'+ \
-                                 last_model.idstr+'.'+str(contact_model12)+ \
-                                 ' restrict cross ignoreHiddenModels true')
-
+                            last_model.idstr+'.'+str(contact_model12)+ \
+                            ' restrict cross ignoreHiddenModels true'+'')
         ax0.chimerax_session.close_id(last_model.id[0]+1)
-        ax0.chimerax_session.run('show #'+str(matchto)+' models')
-        ax0.chimerax_session.run('show #'+str(2+(1+0)*ax0.fold)+'-'+ \
-                                 str(1+(2+0)*ax0.fold)+' models')
+
+        ax0.chimerax_session.run('show '+' models')
+        ax0.chimerax_session.run('hide '+' atoms')
 
 
         if len(clashes) > max_clashes:
