@@ -35,38 +35,25 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
     
     ax0 = axes[0]
     sess = ax0.chimerax_session
-
-    models_all = [i for i in range(1, 1+3*ax0.fold+1)]
-            # list of all models    
     intermediate_id = 101
 
-    ax0_center = ax0.get_representation((1,)).get_center()
+    ax0_order0_model = layer.ax_models(ax0, order=0)[0]
+    ax0_center = ax0_order0_model.get_center()
 
 
-    # define models_to_snapin
+    # collect representants/models to snapin for each axis
     models_to_snapin = [[] for ax in axes]
 
-    for i, ax in enumerate(axes):
-
-        # ax0 axis representants to snapin
-        if i == 0:
-            models_to_snapin[i] = [1] + \
-                    [k for k in range(2+2*ax0.fold, 1+3*ax0.fold+1)]
-
-        # ax1 axis representants to snapin
-        if i == 1:
-            models_to_snapin[i] = \
-                    [k for k in range(2+0*ax0.fold, 1+1*ax0.fold+1)]
+    for i,ax in enumerate(axes):
+        models_to_snapin[i] = layer.ax_models(ax)
 
 
     # step 1: set center of ax0 to [0, 0, 0]
     # --------------------------------------
-
-    for i, ax in enumerate(axes):
-
-        for j, m in enumerate(models_to_snapin[i]):
-            sess.run('move x '+str(-ax0_center[0])+' models #'+str(m))
-            sess.run('move y '+str(-ax0_center[1])+' models #'+str(m))
+    for i,ax in enumerate(axes):
+        for j,m in enumerate(models_to_snapin[i]):
+            sess.run('move x '+str(-ax0_center[0])+' models #'+m.idstr)
+            sess.run('move y '+str(-ax0_center[1])+' models #'+m.idstr)
 
 
     # step 2: snap axis 0 and 1 representants to snapin points
@@ -80,15 +67,14 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
         if i == 0:
             # vector from snapin point (which is origin 0, 0, 0) to
             # axis center of rep1
-            vect_start = sess.model_reg.get_model((1,)).get_center()
+            vect_start = ax0_order0_model.get_center()
 
         # axis 1
         if i == 1:
-            #initial coords of representant 1 (rep1) (#2)
-            ax1_rep1 = sess.model_reg.get_model((ax0.preferred_bs+2,)). \
-                         get_center()
+            # initial coords of representant 1 (rep1)
+            ax1_rep1 = models_to_snapin[i][ax0.preferred_bs].get_center()
 
-            # get snapin point for first model of ax1 (#2)
+            # get snapin point for representant 1 (rep1) of ax1
             # Snapin point is nearest reference point.
             snapin_p_first, d = layer.get_ref_point_ax1(ax1_rep1, ax)
             d_xy = geometry.dist_xy(ax1_rep1, snapin_p_first)
@@ -114,13 +100,12 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
         ctl.d(vect_start)
 
 
-        # for current axis: iterate through axis representants (ax_rep, m)
+        # for current axis: iterate through axis representants to snapin
         for j, model_to_snapin in enumerate(models_to_snapin[i]):
-            ax_rep_id = (model_to_snapin,)
-            ctl.d(ax_rep_id)
+            ctl.d(model_to_snapin.id)
 
             # initial coords of axis representant (ax_rep)
-            ax_rep = sess.model_reg.get_model(ax_rep_id).get_center()
+            ax_rep = model_to_snapin.get_center()
 
 
             # axis 0
@@ -129,7 +114,7 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
             # snapin point.
 
             if i == 0:
-                #coord of real molecule center
+                # coord of real molecule center
                 ax_rep_center = [ax_rep[0]-vect_start[0], \
                                  ax_rep[1]-vect_start[1], \
                                  ax_rep[2]-vect_start[2]]
@@ -138,7 +123,7 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
 
                 if d_xy > max_snapin_distance:
                     ctl.e('model_to_snapin')
-                    ctl.e(model_to_snapin)
+                    ctl.e(model_to_snapin.id)
                     ctl.e('snapin_distance')
                     ctl.e(d_xy)
                     ctl.e('ax_rep_center')
@@ -161,7 +146,7 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
 
                 if d_xy > max_snapin_distance:
                     ctl.e('model_to_snapin')
-                    ctl.e(model_to_snapin)
+                    ctl.e(model_to_snapin.id)
                     ctl.e('snapin_distance')
                     ctl.e(d_xy)
                     ctl.e('ax_rep')
@@ -174,19 +159,15 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
                 # align representant (ax_rep) to model with
                 # preferred binding site
                 if j != ax0.preferred_bs:
-                    sess.match((ax_rep_id[0], 1), (), \
-                               (ax0.preferred_bs+2, 1), ax_rep_id)
-                        # +2 because preferred_bs starts with 0 and
-                        # first model id of ax1 is (2,)
+                    sess.match( \
+                            (model_to_snapin.id[0], 1), (), \
+                            (models_to_snapin[i][ax0.preferred_bs].id[0], 1), \
+                            model_to_snapin.id)
 
 
                 # calculated (snapin) rotation angle of for
                 # representant (ax_rep) regarding preferred_bs model
-                rot_angle = get_trans_rot_param(axes[0].fold, \
-                                                axes[1].fold, \
-                                                ax_rep_id[0]-2)
-                        # -2 because model_number is starting with 0 and
-                        # first model id of ax1 is (2,)
+                rot_angle = get_trans_rot_param(axes[0].fold, axes[1].fold, j)
 
 
                 # perform relative rotation between models, if necessary and
@@ -196,10 +177,9 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
                 if rot_angle != 0:
 
                     # perform snapin rotation of representant (ax_rep)
-                    rot_center = sess.model_reg.get_model(ax_rep_id). \
-                                 get_center()
+                    rot_center = model_to_snapin.get_center()
 
-                    if axes[0].get_representation((1,)).flipped == True:
+                    if ax0_order0_model.flipped == True:
                         sign = -1
                     else:
                         sign = 1
@@ -209,23 +189,22 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
                              str(rot_center[1])+', '+ \
                              str(rot_center[2])+ \
                              ' models #'+ \
-                             sess.model_reg.convert_model_id_to_str(ax_rep_id))
+                             model_to_snapin.idstr)
 
 
                 # rot angle of representant (ax_rep) (before rotation by
                 # rot_angle)
-                ax_rep_rot_angle = sess.model_reg.get_model(ax_rep_id). \
-                                   rot_angle
+                ax_rep_rot_angle = model_to_snapin.rot_angle
                 ctl.d('rot_angle')
                 ctl.d(rot_angle)
-                ctl.d('ax_rep_id')
-                ctl.d(ax_rep_id)
+                ctl.d('model_to_snapin.id')
+                ctl.d(model_to_snapin.id)
                 ctl.d('ax_rep_rot_angle')
                 ctl.d(ax_rep_rot_angle)
 
                 # rot angle of preferred_bs model
-                rot_angle_preferred = sess.model_reg. \
-                        get_model(ax0.preferred_bs+2).rot_angle
+                rot_angle_preferred = \
+                                models_to_snapin[i][ax0.preferred_bs].rot_angle
                 ctl.d('rot_angle_preferred:')
                 ctl.d(rot_angle_preferred)
 
@@ -272,7 +251,7 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
                                                 'snapin rotation too large')
 
                     # previous connections
-                    conn0 = sess.model_reg.get_model(ax_rep_id). \
+                    conn0 = model_to_snapin. \
                             get_connections_for_modes(['flattened', 'default'])
 
                     # updated connections
@@ -295,8 +274,7 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
                     # create self-connections to avoid inhertited
                     # connections
                     for c in conn1:
-                        sess.model_reg.get_model(ax_rep_id). \
-                            set_connection(c, conn1[c], 'snapin')
+                        model_to_snapin.set_connection(c, conn1[c], 'snapin')
 
                     for c in conn1_dest:
                         conn1_dest = sess.model_reg.get_model( \
@@ -308,25 +286,29 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
 
 
                 # coords (complex center) of representant (ax_rep) after
-                # match to #2 and rotation
-                ax_rep_center = ax.get_representation(ax_rep_id).get_center()
+                # match to preferred_bs model and rotation
+                ax_rep_center = model_to_snapin.get_center()
 
 
             # translation vector to final position on snapin point
             transl = [snapin_p[0]-ax_rep_center[0], \
                       snapin_p[1]-ax_rep_center[1]]
-                
-            # translate model to calculated snapin position
-            sess.run('move x '+str(transl[0])+' models #'+str(ax_rep_id[0]))
-            sess.run('move y '+str(transl[1])+' models #'+str(ax_rep_id[0]))
 
+            # translate model to calculated snapin position
+            sess.run('move x '+str(transl[0])+ \
+                                    ' models #'+str(model_to_snapin.id[0]))
+            sess.run('move y '+str(transl[1])+ \
+                                    ' models #'+str(model_to_snapin.id[0]))
+
+
+    models_all = [i for i in range(1, sess.last_id()+1)]
+            # list of all models    
 
     chainids_new = sess.combine(models_all, intermediate_id)
     for model in models_all:
         sess.close_id(model)
 
     sess.split(intermediate_id)
-
     sess.run('save "'+conf.layer_snapin_raw_path+'"')
 
     return
