@@ -29,14 +29,14 @@ class RotSymmAxis():
 
         # check if rotational symmetry axis is perpendicular to xy plane
         if abs(self.axis[2]) < 0.99:
-            ctl.e(self.molecule.model_id)
+            ctl.e(self.molecule.id)
             ctl.e(self.axis)
             raise Exception('RotSymmAxis: init: '+ \
                       'rotational symmetry axis not perpendicular to xy plane')
 
         # check if z component of rotational symmetry axis is >0.
         if self.axis[2] <= 0:
-            ctl.e(self.molecule.model_id)
+            ctl.e(self.molecule.id)
             ctl.e(self.axis)
             raise Exception('RotSymmAxis: init: '+ \
                       'z component of rotational symmetry axis is <=0')

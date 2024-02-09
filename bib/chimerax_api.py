@@ -313,7 +313,7 @@ class ChimeraxSession():
         return
 
 
-    def close_id(self, model_id, alert=True):
+    def close_id(self, model_id):
         ''' Close model_id in a ChimeraX session. '''
 
         model_id = self.model_reg.convert_model_id(model_id)
@@ -329,6 +329,18 @@ class ChimeraxSession():
         if self.model_reg.model_exists(model_id) == True:
             if self.model_reg.check_model_writeprotection(model_id) == False:
                 self.model_reg.remove_model(model_id)
+
+        return
+
+
+    def delete_res_range(self, model_id, res_range):
+        '''
+        Delete residue range of given model id.
+        '''
+        model_id_str = self.model_reg.convert_model_id_to_str(model_id)
+
+        self.run('delete #'+model_id_str+ \
+                            ':'+str(res_range[0])+'-'+str(res_range[1]))
 
         return
 

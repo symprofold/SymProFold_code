@@ -252,15 +252,14 @@ class Axis():
             for i, sur in enumerate(self.surface):
                 for r in self.get_representations():
                     if i == 0:
-                        self.chimerax_session.run('delete #'+str(r[0])+ \
-                            ':-1-'+str(self.surface[0][0]-1))
-                        self.chimerax_session.run('delete #'+str(r[0])+ \
-                            ':'+str(self.surface[-1][1]+1)+'-10000')
+                        self.chimerax_session.delete_res_range( \
+                            r, [-1, self.surface[0][0]-1])
+                        self.chimerax_session.delete_res_range( \
+                            r, [self.surface[-1][1]+1, 10000])
 
                     if i < len(self.surface)-1:
-                        self.chimerax_session.run('delete #'+str(r[0])+ \
-                            ':'+str(self.surface[i][1]+1)+'-'+ \
-                            str(self.surface[i+1][0]-1))
+                        self.chimerax_session.delete_res_range( \
+                            r, [self.surface[i][1]+1, self.surface[i+1][0]-1])
 
         return
 
@@ -281,18 +280,18 @@ class Axis():
                     if self.surface != None:
                         for i, sur in enumerate(self.surface):
                             if i == 0:
-                                self.chimerax_session.run('delete #'+ \
-                                    subid+ \
-                                    ':-1-'+str(self.surface[0][0]-1))
-                                self.chimerax_session.run('delete #'+ \
-                                    subid+ \
-                                    ':'+str(self.surface[-1][1]+1)+'-10000')
+                                self.chimerax_session.delete_res_range( \
+                                    submodel_id, \
+                                    [-1, self.surface[0][0]-1])
+                                self.chimerax_session.delete_res_range( \
+                                    submodel_id, \
+                                    [self.surface[-1][1]+1, 10000])
 
                             if i < len(self.surface)-1:
-                                self.chimerax_session.run('delete #'+ \
-                                    subid+ \
-                                    ':'+str(self.surface[i][1]+1)+'-'+ \
-                                    str(self.surface[i+1][0]-1))
+                                self.chimerax_session.delete_res_range( \
+                                    submodel_id, \
+                                    [self.surface[i][1]+1, \
+                                     self.surface[i+1][0]-1])
 
         return
 
@@ -415,7 +414,7 @@ class Axis():
                                         'axis', register_writeprotection)
 
         for i in range(1, multimer_n+1):
-            current_model_monomer = Monomer(self.model_reg, opened_model_id[0])
+            current_model_monomer = Monomer(self.model_reg, (opened_model_id[0], i))
             self.model_reg.add_model((opened_model_id[0], i), \
                 current_model_monomer, 'monomer', register_writeprotection)
             ax_rep.monomers[(opened_model_id[0], i)] = current_model_monomer
@@ -464,7 +463,6 @@ class Axis_rep(Axis):
         self.model_reg = model_reg
 
         self.id = None
-        self.model_id = -1
         self.resids_initial = []
         self.termini = [-1, -1]
         self.multimer_n = 0
@@ -526,8 +524,6 @@ class Axis_rep(Axis):
         model_id = self.model_reg.convert_model_id(model_id)
         self.id = model_id
 
-        self.set_model_id(model_id[0])
-
         return
 
 
@@ -539,13 +535,6 @@ class Axis_rep(Axis):
         return model_id_str
 
 
-    def set_model_id(self, model_id):
-        ''' Set main model id. '''
-        ctl.typecheck(model_id, int)
-        self.model_id = model_id
-        return
-
-
     def set_session(self, session):
         ''' Set ChimeraX session. '''
         self.chimerax_session = session # object
@@ -554,7 +543,7 @@ class Axis_rep(Axis):
 
     def determine_sequence(self):
         ''' Determine and set sequence. '''
-        self.sequence = get_seq(str(self.model_id)+'.1', self.chimerax_session)
+        self.sequence = self.chimerax_session.get_seq((self.id[0],1))
         return
 
 
@@ -580,7 +569,7 @@ class Axis_rep(Axis):
     def set_domain_binding_status(self):
         ''' Determine and set binding status for each submodel. '''
 
-        subids = self.chimerax_session.get_submodel_ids(self.model_id)
+        subids = self.chimerax_session.get_submodel_ids(self.id)
 
         return
 
@@ -614,9 +603,9 @@ class Axis_rep(Axis):
         source_id = self.model_reg.convert_model_id(source)
         dest_id = self.model_reg.convert_model_id(dest)
 
-        if source_id[0] != self.model_id:
+        if source_id[0] != self.id[0]:
             ctl.e(source_id[0])
-            ctl.e(self.model_id)
+            ctl.e(self.id)
             ctl.error('set_connection: starting id does not fit to model')
 
         # check if connection already set
@@ -769,12 +758,12 @@ class Axis_rep(Axis):
         sequence.
         '''
         if self.conf.domains[0][0] in self.resids_initial:
-            self.chimerax_session.run('delete #'+str(self.model_id)+ \
-                                      ':-1-'+str(self.termini[0]))
+            self.chimerax_session.delete_res_range(self.id, \
+                                                   [-1, self.termini[0]])
 
         if self.conf.domains[-1][1] in self.resids_initial:
-            self.chimerax_session.run('delete #'+str(self.model_id)+ \
-                                      ':'+str(self.termini[1])+'-10000')
+            self.chimerax_session.delete_res_range(self.id, \
+                                                   [self.termini[1], 10000])
 
         return
 
@@ -787,12 +776,12 @@ class Axis_rep(Axis):
         sum_n = 0        
         
         for submodel_id in range(1, self.multimer_n+1):
-            resids = self.chimerax_session.resids(str(self.model_id)+'.'+ \
-                                                  str(submodel_id))
+            resids = self.chimerax_session.resids((self.id[0], submodel_id))
+
             for resid in resids:
                 if self.termini[0] <= resid <= self.termini[1]:
                     sum_vect = sum_vect+self.chimerax_session. \
-                               get_xyz((self.model_id, submodel_id), resid)
+                               get_xyz((self.id[0], submodel_id), resid)
                     sum_n += 1
 
         center = sum_vect/sum_n
@@ -815,16 +804,14 @@ class Axis_rep(Axis):
         cylinder_h = 200
         
         for submodel_id in range(1,self.multimer_n+1):
-            resids = self.chimerax_session.resids( \
-                str(self.model_id)+'.'+str(submodel_id))
+            resids = self.chimerax_session.resids((self.id[0], submodel_id))
 
             for resid in resids:
-                p = sess.get_xyz((self.model_id, submodel_id), resid)
-                d = geometry.dist(p, [center1[0],center1[1],p[2]])
+                p = sess.get_xyz((self.id[0], submodel_id), resid)
+                d = geometry.dist(p, [center1[0], center1[1], p[2]])
 
                 if d <= cylinder_r and abs(p[2]-center1[2]) <= cylinder_h/2:
-                    sum_vect += sess.get_xyz((self.model_id, submodel_id), \
-                                             resid)
+                    sum_vect += sess.get_xyz((self.id[0], submodel_id), resid)
                     sum_n += 1
 
         center = sum_vect/sum_n
@@ -838,15 +825,15 @@ class Axis_rep(Axis):
         '''
         for i, sur in enumerate(self.surface):
             if i == 0:
-                self.chimerax_session.run('delete #'+str(self.model_id)+ \
-                    ':-1-'+str(self.surface[0][0]-1))
-                self.chimerax_session.run('delete #'+str(self.model_id)+ \
-                    ':'+str(self.surface[-1][1]+1)+'-10000')
+                self.chimerax_session.delete_res_range(self.id, \
+                                [-1, self.surface[0][0]-1])
+                self.chimerax_session.delete_res_range(self.id, \
+                                [self.surface[-1][1]+1, 10000])
 
             if i < len(self.surface)-1:
-                self.chimerax_session.run('delete #'+str(self.model_id)+ \
-                    ':'+str(self.surface[i][1]+1)+'-'+ \
-                    str(self.surface[i+1][0]-1))
+                self.chimerax_session.delete_res_range(self.id, \
+                                [self.surface[i][1]+1, self.surface[i+1][0]-1])
+
         return
 
 

@@ -62,11 +62,11 @@ class ReferenceFrame():
                             1+round(self.molecule.multimer_n*(2/3))]
 
             c0 = self.chimerax_session.get_xyz(\
-                    (self.molecule.model_id, submodel_ids[0]), center_res)
+                    (self.molecule.id[0], submodel_ids[0]), center_res)
             c1 = self.chimerax_session.get_xyz(\
-                    (self.molecule.model_id, submodel_ids[1]), center_res)
+                    (self.molecule.id[0], submodel_ids[1]), center_res)
             c2 = self.chimerax_session.get_xyz(\
-                    (self.molecule.model_id, submodel_ids[2]), center_res)
+                    (self.molecule.id[0], submodel_ids[2]), center_res)
 
             self.reference_points = [c0, c1, c2]
             self.reference_points_type = 0
@@ -91,13 +91,13 @@ class ReferenceFrame():
             submodel_ids = [1, 2]
 
             c0 = self.chimerax_session.get_xyz( \
-                    (self.molecule.model_id, submodel_ids[0]), center_res[1])
+                    (self.molecule.id[0], submodel_ids[0]), center_res[1])
             c1 = self.chimerax_session.get_xyz( \
-                    (self.molecule.model_id, submodel_ids[1]), center_res[1])
+                    (self.molecule.id[0], submodel_ids[1]), center_res[1])
             c2 = self.chimerax_session.get_xyz( \
-                    (self.molecule.model_id, submodel_ids[0]), center_res[2])
+                    (self.molecule.id[0], submodel_ids[0]), center_res[2])
             c3 = self.chimerax_session.get_xyz( \
-                    (self.molecule.model_id, submodel_ids[1]), center_res[2])
+                    (self.molecule.id[0], submodel_ids[1]), center_res[2])
 
             c0c1 = geometry.norm([c1[0]-c0[0], c1[1]-c0[1], c1[2]-c0[2]])
             c2c3 = geometry.norm([c3[0]-c2[0], c3[1]-c2[1], c3[2]-c2[2]])
@@ -108,16 +108,16 @@ class ReferenceFrame():
 
             if abs(dp_min) > 0.5:
                 c0 = self.chimerax_session.get_xyz( \
-                        (self.molecule.model_id, submodel_ids[0]), \
+                        (self.molecule.id[0], submodel_ids[0]), \
                         center_res[0])
                 c1 = self.chimerax_session.get_xyz( \
-                        (self.molecule.model_id, submodel_ids[1]), \
+                        (self.molecule.id[0], submodel_ids[1]), \
                         center_res[0])
                 c2 = self.chimerax_session.get_xyz( \
-                        (self.molecule.model_id, submodel_ids[0]), \
+                        (self.molecule.id[0], submodel_ids[0]), \
                         center_res[2])
                 c3 = self.chimerax_session.get_xyz( \
-                        (self.molecule.model_id, submodel_ids[1]), \
+                        (self.molecule.id[0], submodel_ids[1]), \
                         center_res[2])
 
                 c0c1 = geometry.norm([c1[0]-c0[0], c1[1]-c0[1], c1[2]-c0[2]])
@@ -130,16 +130,16 @@ class ReferenceFrame():
 
             if abs(dp_min) > 0.5:
                 c0 = self.chimerax_session.get_xyz( \
-                        (self.molecule.model_id, submodel_ids[0]), \
+                        (self.molecule.id[0], submodel_ids[0]), \
                         center_res[0])
                 c1 = self.chimerax_session.get_xyz( \
-                        (self.molecule.model_id, submodel_ids[1]), \
+                        (self.molecule.id[0], submodel_ids[1]), \
                         center_res[0])
                 c2 = self.chimerax_session.get_xyz( \
-                        (self.molecule.model_id, submodel_ids[0]), \
+                        (self.molecule.id[0], submodel_ids[0]), \
                         center_res[1])
                 c3 = self.chimerax_session.get_xyz( \
-                        (self.molecule.model_id, submodel_ids[1]), \
+                        (self.molecule.id[0], submodel_ids[1]), \
                         center_res[1])
 
                 c0c1 = geometry.norm([c1[0]-c0[0], c1[1]-c0[1], c1[2]-c0[2]])
@@ -180,13 +180,13 @@ class ReferenceFrame():
             # reference points of type 2
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~
             c0 = self.chimerax_session.get_xyz( \
-                    (self.molecule.model_id, submodel_ids[0]), ref_res[1])
+                    (self.molecule.id[0], submodel_ids[0]), ref_res[1])
             c1 = self.chimerax_session.get_xyz( \
-                    (self.molecule.model_id, submodel_ids[1]), ref_res[1])
+                    (self.molecule.id[0], submodel_ids[1]), ref_res[1])
             c2 = self.chimerax_session.get_xyz( \
-                    (self.molecule.model_id, submodel_ids[0]), ref_res[2])
+                    (self.molecule.id[0], submodel_ids[0]), ref_res[2])
             c3 = self.chimerax_session.get_xyz( \
-                    (self.molecule.model_id, submodel_ids[1]), ref_res[2])
+                    (self.molecule.id[0], submodel_ids[1]), ref_res[2])
 
             dz_max = abs(c0[2]-c2[2])
             ref_points = [c0, c1, c2, c3]
@@ -194,13 +194,13 @@ class ReferenceFrame():
             # reference points of type 3
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~
             c0 = self.chimerax_session.get_xyz( \
-                    (self.molecule.model_id, submodel_ids[0]), ref_res[0])
+                    (self.molecule.id[0], submodel_ids[0]), ref_res[0])
             c1 = self.chimerax_session.get_xyz( \
-                    (self.molecule.model_id, submodel_ids[1]), ref_res[0])
+                    (self.molecule.id[0], submodel_ids[1]), ref_res[0])
             c2 = self.chimerax_session.get_xyz( \
-                    (self.molecule.model_id, submodel_ids[0]), ref_res[2])
+                    (self.molecule.id[0], submodel_ids[0]), ref_res[2])
             c3 = self.chimerax_session.get_xyz( \
-                    (self.molecule.model_id, submodel_ids[1]), ref_res[2])
+                    (self.molecule.id[0], submodel_ids[1]), ref_res[2])
 
             if (abs(c0[2]-c2[2]) > dz_max and type_given == None) or \
                type_given == 3:
@@ -211,13 +211,13 @@ class ReferenceFrame():
             # reference points of type 4
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~
             c0 = self.chimerax_session.get_xyz( \
-                    (self.molecule.model_id, submodel_ids[0]), ref_res[0])
+                    (self.molecule.id[0], submodel_ids[0]), ref_res[0])
             c1 = self.chimerax_session.get_xyz( \
-                    (self.molecule.model_id, submodel_ids[1]), ref_res[0])
+                    (self.molecule.id[0], submodel_ids[1]), ref_res[0])
             c2 = self.chimerax_session.get_xyz( \
-                    (self.molecule.model_id, submodel_ids[0]), ref_res[1])
+                    (self.molecule.id[0], submodel_ids[0]), ref_res[1])
             c3 = self.chimerax_session.get_xyz( \
-                    (self.molecule.model_id, submodel_ids[1]), ref_res[1])
+                    (self.molecule.id[0], submodel_ids[1]), ref_res[1])
 
             if (abs(c0[2]-c2[2]) > dz_max and type_given == None) or \
                type_given == 4:
