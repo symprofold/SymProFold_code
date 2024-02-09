@@ -637,7 +637,7 @@ class Assembler():
 
     def process_layer(self, combine_mode=2):
         '''
-        Process the layer for different variantions of lattice constants.
+        Process the layer for different variations of lattice constants.
         '''
         clashes = []
 
@@ -1104,11 +1104,13 @@ class Assembler():
 
         modes: 'default', 'flattened', 'snapin'
         '''
-        ax0 = self.axes[0]
-        ax1 = self.axes[1]
         all_joins = []
 
+        if len(self.axes) < 2:
+            return all_joins
 
+        ax0 = self.axes[0]
+        ax1 = self.axes[1]
         ax0_models = ax0.get_representations()
         ax1_models = ax1.get_representations()
 
