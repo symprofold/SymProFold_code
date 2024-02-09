@@ -686,7 +686,8 @@ class Assembler():
         
         self.layers[1].calc_refpoint_constant(self.lc_offset)
 
-        # align layer_flat to ref points
+        # align layer_flat to ref points and move all other models relative to
+        # it
         if len(self.axes) > 1 and max(self.conf.flatten_modes) >= 1:
             ax0.chimerax_session.run('open "'+self.conf.layer_raw_path+'"')
 

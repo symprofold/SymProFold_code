@@ -9,12 +9,15 @@ import os
 
 def align_layer(axes, layer, conf, sess):
     '''
-    Align layer to orientation points.
+    Align layer to orientation points and move all other models relative to it.
     Typically the orientation points are in the xy plane.
     '''
     ax0 = axes[0]
-    models_to_align = [i for i in range(1, 1+3*ax0.fold+1)]
-    models_ref = [1] + [i for i in range(2+2*ax0.fold, 1+3*ax0.fold+1)]
+    models_to_align = [i for i in range(1, sess.last_id()+1)]
+            # list of all models    
+
+    ax0_models = layer.ax_models(ax0)
+            # use ax0_models as reference models for alignment
 
     ax_reprs_first = layer.get_representations()[ \
                                     next(iter(layer.get_representations()))]
@@ -31,8 +34,9 @@ def align_layer(axes, layer, conf, sess):
     chainids_A = []
     for c in chainids_new:
         if 'A' in c:
-            for m in models_ref:
-                if 'mid'+str(m)+'point' in c:
+            for m in ax0_models: # use ax0_models as reference models for
+                                 # alignment
+                if 'mid'+str(m.id[0])+'point' in c:
                     chainids_A.append(c)
 
     align_str = ''
@@ -111,8 +115,8 @@ def align_layer(axes, layer, conf, sess):
     if pre_alignment_extremum_highest_coord[2] < \
         pre_alignment_extremum_lowest_coord[2]:
 
-        ax0.get_representation((1,)).flipped = \
-                                    not ax0.get_representation((1,)).flipped
+        layer.ax_models(ax0, order=0)[0].flipped = \
+                            not layer.ax_models(ax0, order=0)[0].flipped
 
 
     # turn probable outside of layer model to top (estimation)
@@ -130,10 +134,10 @@ def align_layer(axes, layer, conf, sess):
         sess.close_id((m,))
 
     if cen[2] > 0:
-        if ax0.get_representation((1,)).flipped:
+        if layer.ax_models(ax0, order=0)[0].flipped:
             sess.run('turn x 180 models #'+str(intermediate_id))
-            ax0.get_representation((1,)).flipped = \
-                                    not ax0.get_representation((1,)).flipped
+            layer.ax_models(ax0, order=0)[0].flipped = \
+                                not layer.ax_models(ax0, order=0)[0].flipped
             layer.flipped = not layer.flipped
 
 

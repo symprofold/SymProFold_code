@@ -183,10 +183,10 @@ class Layer():
         '''
         seq_range = [-1, -1]
 
-        ax0_repr = self.axes[0].get_representations()[(1,)]
+        ax0_repr = self.ax_models(self.axes[0])[0]
 
         if len(self.axes) > 1:
-            ax1_repr = self.axes[1].get_representations()[(2,)]
+            ax1_repr = self.ax_models(self.axes[1])[0]
             seq_range[0] = min(ax0_repr.termini[0], ax1_repr.termini[0])
             seq_range[1] = max(ax0_repr.termini[1], ax1_repr.termini[1])
         else:
