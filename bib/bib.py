@@ -167,14 +167,14 @@ def model_to_plane(meta, model_id, session):
 
 
 def combine_chains(model1_id, model2_id, session, dest_id=500, \
-                   close_model2=True):
-    ''' Combine two chains to one model. '''
+                   duplicate_after_completion=False):
+    '''
+    Combine two chains from two models to a combined model.
 
-    ids_to_close = ''
-
-    id1 = session.model_reg.convert_model_id_to_str(model1_id)
-    id2 = session.model_reg.convert_model_id_to_str(model2_id)
-
+    Args:
+        duplicate_after_completion: The combined model is copied to both
+                input model ids after combination.
+    '''
     model1_id = session.model_reg.convert_model_id(model1_id)
     model2_id = session.model_reg.convert_model_id(model2_id)
 
@@ -186,19 +186,22 @@ def combine_chains(model1_id, model2_id, session, dest_id=500, \
         ctl.error('combine_chains: same model id')
         return False        
 
-    if not session.model_reg.model_exists(id1):
-        ctl.e(id1)
+    if not session.model_reg.model_exists(model1_id):
+        ctl.e(model1_id)
         ctl.error('combine_chains: model missing')
 
-    if not session.model_reg.model_exists(id2):
-        ctl.e(id2)
+    if not session.model_reg.model_exists(model2_id):
+        ctl.e(model2_id)
         ctl.error('combine_chains: model missing')
 
 
-    model_1_surface = session.model_reg.get_model(id1).get_surface()
-    model_2_surface = session.model_reg.get_model(id2).get_surface()
+    model1 = session.model_reg.get_model(model1_id)
+    model2 = session.model_reg.get_model(model2_id)
 
-    conf = session.model_reg.get_model(model1_id[0]).conf
+    model_1_surface = model1.get_surface()
+    model_2_surface = model2.get_surface()
+
+    conf = session.model_reg.get_model(model1.id[0]).conf
 
     # check if gene contains only one domain
     if len(conf.domains) == 1:
@@ -208,19 +211,19 @@ def combine_chains(model1_id, model2_id, session, dest_id=500, \
 
 
     # check if models already merged
-    if model1_id in session.model_reg.get_model(model1_id[0]).connected:
-        ctl.d(model1_id)
-        ctl.d('combine_chains: already connection existing with model1_id')
+    if model1.id in session.model_reg.get_model(model1.id[0]).connected:
+        ctl.d(model1.id)
+        ctl.d('combine_chains: already connection existing with model1.id')
         return False
 
-    if model2_id in session.model_reg.get_model(model2_id[0]).connected:
-        ctl.d(model2_id)
-        ctl.d('combine_chains: already connection existing with model2_id')
+    if model2.id in session.model_reg.get_model(model2.id[0]).connected:
+        ctl.d(model2.id)
+        ctl.d('combine_chains: already connection existing with model2.id')
         return False
 
 
-    resids1 = session.resids(id1)
-    resids2 = session.resids(id2)
+    resids1 = session.resids(model1.id)
+    resids2 = session.resids(model2.id)
 
     if len(resids1) == 0 or len(resids2) == 0:
         ctl.d('combine_chains not possible because one chain empty')
@@ -229,70 +232,72 @@ def combine_chains(model1_id, model2_id, session, dest_id=500, \
 
     for i, sur in enumerate(model_1_surface):
         if i == 0:
-            session.run('delete #'+str(id1)+ \
-                ':-1-'+str(model_1_surface[0][0]-1))
-            session.run('delete #'+str(id1)+ \
-                ':'+str(model_1_surface[-1][1]+1)+'-10000')
+            session.delete_res_range( \
+                        model1.id, [-1, model_1_surface[0][0]-1])
+            session.delete_res_range( \
+                        model1.id, [model_1_surface[-1][1]+1, 10000])
 
         if i < len(model_1_surface)-1:
-            session.run('delete #'+str(id1)+ \
-                ':'+str(model_1_surface[i][1]+1)+'-'+ \
-                str(model_1_surface[i+1][0]-1))
+            session.delete_res_range(model1.id, \
+                        [model_1_surface[i][1]+1, model_1_surface[i+1][0]-1])
 
     for i, sur in enumerate(model_2_surface):
         if i == 0:
-            session.run('delete #'+str(id2)+ \
-                ':-1-'+str(model_2_surface[0][0]-1))
-            session.run('delete #'+str(id2)+ \
-                ':'+str(model_2_surface[-1][1]+1)+'-10000')
+            session.delete_res_range( \
+                        model2.id, [-1, model_2_surface[0][0]-1])
+            session.delete_res_range( \
+                        model2.id, [model_2_surface[-1][1]+1, 10000])
 
         if i < len(model_2_surface)-1:
-            session.run('delete #'+str(id2)+ \
-                ':'+str(model_2_surface[i][1]+1)+'-'+ \
-                str(model_2_surface[i+1][0]-1))
+            session.delete_res_range(model2.id, \
+                        [model_2_surface[i][1]+1, model_2_surface[i+1][0]-1])
 
 
     # checks
-    res_ov = session.get_residue_overlap(id1, id2)
+    res_ov = session.get_residue_overlap(model1.id, model2.id)
     if len(res_ov) != 0:
         ctl.e('combine_chains: chains overlapping, not possible to merge')
-        ctl.e(id1)
-        ctl.e(id2)
+        ctl.e(model1.id)
+        ctl.e(model2.id)
         ctl.e(res_ov)
         ctl.error('combine_chains: chains overlapping, not possible to merge')
 
 
-    dist_check, dist = proteinmerge.check_merge_possible(id1, id2, session, 80)
+    dist_check, dist = proteinmerge.check_merge_possible( \
+                                            model1.id, model2.id, session, 80)
 
     if dist_check == 0:
-        ctl.e(id1)
-        ctl.e(id2)        
+        ctl.e(model1.id)
+        ctl.e(model2.id)        
         ctl.e(dist_check)
         ctl.e(dist)
         raise Exception('combine_chains: dist_check failed')
 
-    id1_chainid = session.get_chainid(id1)
-    session.run('changechains #'+str(id1)+' '+id1_chainid)
-    session.run('changechains #'+str(id2)+' '+id1_chainid)
+    id1_chainid = session.get_chainid(model1.id)
+    id2_chainid = session.get_chainid(model2.id)
+    session.rename_chainid(model1.id, id1_chainid)
+    session.rename_chainid(model2.id, id1_chainid)
 
-    session.run('combine #'+id2+' #'+id1+' modelId #'+str(dest_id))
+    session.combine_models([model2, model1], dest_id)
 
-    session.close_id(id1)
+    session.close_id(model1.id)
+    session.close_id(model2.id)
 
-    if close_model2 == True:
-        session.close_id(id2)
-    else:    
-        ids_to_close += ' #'+str(id2)
+    session.change_model_id(dest_id, model1.id)
+    session.rename_chainid(model1.id, id1_chainid)
 
-    session.run('rename #'+str(dest_id)+' id #'+id1)
-    session.run('changechains #'+str(id1)+' '+id1_chainid)
+    # duplicate after completion
+    if duplicate_after_completion:
+        session.combine_models([model1], model2.idstr)
+        session.rename_chainid(model2.id, id2_chainid)
 
-    if session.model_reg.model_exists(id1):
-        session.model_reg.get_model(id1).modelling_completeness = 2
-        session.model_reg.get_model(model1_id[0]).connected.append(model1_id)
 
-    if session.model_reg.model_exists(id2):
-        session.model_reg.get_model(id2).modelling_completeness = 2
-        session.model_reg.get_model(model2_id[0]).connected.append(model2_id)
+    if session.model_reg.model_exists(model1.id):
+        model1.modelling_completeness = 2
+        session.model_reg.get_model(model1.id[0]).connected.append(model1.id)
+
+    if session.model_reg.model_exists(model2.id):
+        model2.modelling_completeness = 2
+        session.model_reg.get_model(model2.id[0]).connected.append(model2.id)
 
     return True

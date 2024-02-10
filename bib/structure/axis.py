@@ -4,6 +4,7 @@ import ctl
 import filesystem
 import geometry
 import molmodel
+from structure.model import Model
 from structure.monomer import Monomer
 from structure.referenceframe import ReferenceFrame
 from structure.rotsymm_axis import RotSymmAxis
@@ -446,7 +447,7 @@ class Axis():
         return ax_rep
 
 
-class Axis_rep(Axis):
+class Axis_rep(Model, Axis):
     '''
     This class describes one single rotational symmetry complex (SymPlex),
     which is one building block of the layer.
@@ -517,28 +518,6 @@ class Axis_rep(Axis):
         else:
 
             return -1
-
-
-    def set_id(self, model_id):
-        ''' Set model id as tuple. '''
-        model_id = self.model_reg.convert_model_id(model_id)
-        self.id = model_id
-
-        return
-
-
-    @property
-    def idstr(self):
-        ''' Get model id in string representation. '''
-        model_id_str = self.model_reg.convert_model_id_to_str(self.id)
-
-        return model_id_str
-
-
-    def set_session(self, session):
-        ''' Set ChimeraX session. '''
-        self.chimerax_session = session # object
-        return
 
 
     def determine_sequence(self):

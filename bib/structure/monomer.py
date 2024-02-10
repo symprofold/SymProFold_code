@@ -1,7 +1,9 @@
 import ctl
 
+from structure.model import Model
 
-class Monomer():
+
+class Monomer(Model):
     '''
     This class describes a monomer. Monomers can be parts of larger complexes.
     '''
@@ -25,15 +27,6 @@ class Monomer():
         return
 
 
-    def set_id(self, model_id):
-        ''' Set model id. '''
-
-        model_id = self.model_reg.convert_model_id(model_id)
-        self.id = model_id
-
-        return
-
-
     def get_missing_res_n(self):
         ''' Get number of missing residues. '''
 
@@ -42,13 +35,6 @@ class Monomer():
             self.missing_res_n = len(self.sequence)-res_n
             
         return self.missing_res_n
-
-
-    def set_session(self, session):
-        ''' Set Chimerax session. '''
-        self.chimerax_session = session # class
-        self.session = session.session
-        return
 
 
     def get_surface(self):

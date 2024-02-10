@@ -345,13 +345,37 @@ class ChimeraxSession():
         return
 
 
-    def get_chainid(self, modelid):
-        ''' Get chain id of a model. '''
+    def change_model_id(self, model_id, model_id_new):
+        '''
+        Change model id in ChimeraX session.
+        '''
+        model_id_str = self.model_reg.convert_model_id_to_str(model_id)
+        model_id_new_str = self.model_reg.convert_model_id_to_str(model_id_new)
 
+        self.run('rename #'+model_id_str+' id #'+model_id_new_str)
+
+        return
+
+
+    def rename_chainid(self, model_id, chain_id):
+        '''
+        Rename chain id of given model id.
+        '''
+        model_id_str = self.model_reg.convert_model_id_to_str(model_id)
+
+        self.run('changechains #'+model_id_str+' '+str(chain_id))
+
+        return
+
+
+    def get_chainid(self, model_id):
+        ''' Get chain id of given model id. '''
+
+        model_id_str = self.model_reg.convert_model_id_to_str(model_id)
         chain = ''
 
         for s in all_atomic_structures(self.session):
-            if '#'+modelid+' ' in str(s)+' ':
+            if '#'+model_id_str+' ' in str(s)+' ':
 
                 for r in s.residues:
                     chain = str(r).split('/')[1].split(' ')[0]
@@ -528,9 +552,11 @@ class ChimeraxSession():
         '''
         models_idstr = self.ids_str(models)
         combined_model_id = self.model_reg.convert_model_id(combined_model_id)
+        combined_model_id_str = self.model_reg.convert_model_id_to_str( \
+                                                            combined_model_id)
 
         self.run('combine '+models_idstr+ \
-                        ' close false modelId #'+str(combined_model_id[0]))
+                        ' close false modelId #'+combined_model_id_str)
 
         return
 
