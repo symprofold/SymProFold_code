@@ -140,7 +140,7 @@ class ChimeraxSession():
         Get coordinates (x, y, z) of a residue (model_id, resid) using the
         "getcrd" command of ChimeraX.
         '''
-        re = run(self.session, "getcrd "+str(idstr))
+        re = run(self.session, 'getcrd '+str(idstr))
 
         return re[0]
 
@@ -168,7 +168,8 @@ class ChimeraxSession():
         return residues
 
 
-    def match(self, model_id, model_res_range, match_to_id, bring_id):
+    def match(self, model_id, model_res_range, match_to_id, bring_id, \
+              model_chainid='', match_to_chainid=''):
         ''' Superposition of model to another model. '''
 
         model_id = self.model_reg.convert_model_id(model_id)
@@ -177,13 +178,25 @@ class ChimeraxSession():
         match_to_id_str = self.model_reg.convert_model_id_to_str(match_to_id)
         bring_id = self.model_reg.convert_model_id(bring_id)     
 
+        if model_chainid != '':
+            model_chainid_infix = '/'+model_chainid
+        else:
+            model_chainid_infix = ''
+
+        if match_to_chainid != '':
+            match_to_chainid_infix = '/'+match_to_chainid
+        else:
+            match_to_chainid_infix = ''
+
         model_res_range_txt = ''
         if len(model_res_range) == 2:
             model_res_range_txt = ':'+str(model_res_range[0])+'-'+ \
                                   str(model_res_range[1])
 
-        run(self.session, 'match #'+model_id_str+model_res_range_txt+ \
-            ' to #'+match_to_id_str+' bring #'+str(bring_id[0])+'.1-100')
+        run(self.session, \
+            'match #'+model_id_str+model_chainid_infix+model_res_range_txt+ \
+            ' to #'+match_to_id_str+match_to_chainid_infix+ \
+            ' bring #'+str(bring_id[0])+'.1-100')
 
         return
 

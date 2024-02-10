@@ -5,6 +5,7 @@ import filesystem
 import geometry
 import molmodel
 import proteinmerge
+from structure.model import Model
 
 import math
 import os
@@ -78,28 +79,32 @@ def place_plane(session):
 def model_2fold_to_plane(model_id, meta, session):
     ''' Align 2-fold axis model to xy plane. '''
 
+    model = Model(session.model_reg)
+    model.set_id(model_id)
+
     tmp_dir = filesystem.clean_path( \
             os.path.dirname(os.path.realpath(__file__))+'/../../')
     tmpfile = tmp_dir+'tmp.pdb'
     session.run('save '+tmpfile+' models #'+str(model_id))
 
-    tmp_model_id = model_id+1
-    session.run('open '+tmpfile)
-    session.run('split #'+str(tmp_model_id))
-    session.run('match #'+str(tmp_model_id)+'.2 to #'+str(tmp_model_id)+'.1')
-    re = session.run('measure rotation #'+str(tmp_model_id)+'.2 toModel #'+ \
-                     str(tmp_model_id)+'.1'+' showAxis false')
+    tmp_model = Model(session.model_reg)
+    tmp_model.set_id((model_id+1,))
+    session.run('open "'+tmpfile+'"')
+    session.run('split #'+tmp_model.idstr)
+    session.run('match #'+tmp_model.idstr+'.2 to #'+tmp_model.idstr+'.1')
+    re = session.run('measure rotation #'+tmp_model.idstr+'.2 toModel #'+ \
+                     tmp_model.idstr+'.1'+' showAxis false')
     rot_axis = chimerax_api.get_rot_axis(re.description())
-    session.close_id(tmp_model_id)
+    session.close_id(tmp_model.id)
 
     ctl.d(rot_axis)
 
     center_res = round((meta[model_id][1][0]+ \
                         meta[model_id][1][1])/2)
     center0 = session.get_coord_using_getcrd_command(
-                    '#'+str(model_id)+'/A:'+str(center_res)+'@CA')
+                    '#'+model.idstr+'/A:'+str(center_res)+'@CA')
     center1 = session.get_coord_using_getcrd_command(
-                    '#'+str(model_id)+'/B:'+str(center_res)+'@CA')
+                    '#'+model.idstr+'/B:'+str(center_res)+'@CA')
 
     c0c1 = [center1[0]-center0[0], center1[1]-center0[1], \
             center1[2]-center0[2]]
@@ -111,38 +116,38 @@ def model_2fold_to_plane(model_id, meta, session):
     main_dir = filesystem.clean_path( \
             os.path.dirname(os.path.realpath(__file__))+'/../')
 
-    session.run('open '+main_dir+'/component_files/marker.pdb')
+    session.run('open "'+main_dir+'/component_files/marker.pdb'+'"')
 
     session.run('move x '+str(center0[0]+normal[0])+ \
-                ' models #'+str(tmp_model_id))
+                ' models #'+tmp_model.idstr)
     session.run('move y '+str(center0[1]+normal[1])+ \
-                ' models #'+str(tmp_model_id))
+                ' models #'+tmp_model.idstr)
     session.run('move z '+str(center0[2]+normal[2])+ \
-                ' models #'+str(tmp_model_id))    
+                ' models #'+tmp_model.idstr)    
 
-    session.run('combine #'+str(model_id)+' #'+str(tmp_model_id))
+    session.combine_models([model, tmp_model], str(tmp_model.id[0]+1))
     session.run('marker #201 position '+str(normal[0])+','+ \
                 str(normal[1])+','+str(normal[2])+' color yellow radius 1')
 
-    cmd_align = 'align #'+str(tmp_model_id+1)+'/A:'+str(center_res)+'@CA '+ \
-                 '#'+str(tmp_model_id+1)+'/B:'+str(center_res)+'@CA '+ \
-                 '#'+str(tmp_model_id+1)+'/C:1@CA '+ \
+    cmd_align = 'align #'+str(tmp_model.id[0]+1)+'/A:'+str(center_res)+'@CA '+ \
+                 '#'+str(tmp_model.id[0]+1)+'/B:'+str(center_res)+'@CA '+ \
+                 '#'+str(tmp_model.id[0]+1)+'/C:1@CA '+ \
                  'toAtoms #100,101,102'
     ctl.d(cmd_align)
     session.run(cmd_align)
 
-    session.close_id(tmp_model_id)
+    session.close_id(tmp_model.id)
 
-    session.run('split #'+str(tmp_model_id+1))
-    session.close_id((tmp_model_id+1, 3))
+    session.run('split #'+str(tmp_model.id[0]+1))
+    session.close_id((tmp_model.id[0]+1, 3))
 
-    ctl.d(str(model_id)+'.1')
-    ctl.d(str(tmp_model_id+1)+'.1')
+    ctl.d(model.idstr+'.1')
+    ctl.d(str(tmp_model.id[0]+1)+'.1')
 
-    session.run('match #'+str(model_id)+'/A'+' to #'+ \
-                str(tmp_model_id+1)+'/A'+' bring #'+str(model_id)+'.1-100')
-    
-    session.close_id(tmp_model_id+1)
+    session.match(model.id, [], tmp_model.id[0]+1, model.id, \
+                  model_chainid='A', match_to_chainid='A')
+
+    session.close_id(tmp_model.id[0]+1)
 
     return
 
