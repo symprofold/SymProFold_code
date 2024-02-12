@@ -211,10 +211,21 @@ def determine_clusters(mode, subchain_mode, root_path, assemb, verbous):
                     if mode.interface_matrix_type == 0:
                         distogram = interface_matrix.load(f, terminus_res)
                     elif mode.interface_matrix_type == 1:
-                        distogram = interface_matrix_signed.load(f, \
-                                                                 terminus_res)
+                        distogram = interface_matrix_signed.load( \
+                                                f, terminus_res, \
+                                                monomers_involved=[1, 2])
 
-                    if distogram == {}:
+                        scenario_path = symplot.prediction_scenario. \
+                                    get_path(f, sc_folder)
+                        fn = symplot.prediction_scenario.get_coord_filename(f)
+                        mol_count = bibpdb.get_multimer_n(scenario_path+fn)
+
+                        monomers_involved = interface_matrix_signed. \
+                                            monomers_involved(f, terminus_res)
+
+
+                    if distogram == {} or \
+                       (mol_count >= 3 and len(monomers_involved) < 2):
                         if verbous:
                             ctl.p(f)
                             ctl.p('distogram == {}')

@@ -11,20 +11,23 @@ import math
 import os
 
 
-def open_model(sess, file, model_id, meta={}, part=0):
+def open_model(sess, file, model_id, meta={}, part=0, \
+               termini_with_signalsequence=True):
     '''
     Open model and calculate basic parameter.
     '''
     if part == 0 or part == 1:
-        sess.run('open '+str(file))  
-        model_id += 1
+        sess.open_model(file)
+        model_id = sess.last_id()
     if part == 0 or part == 2:
         sess.run('hide #'+str(model_id)+' atoms')
         sess.run('show #'+str(model_id)+' cartoons')
-        sess.run('split #'+str(model_id))
+        sess.split_model(model_id)
     if part == 0 or part == 1:
         rmsds = bibpdb.get_rmsds(file)
-        termini = molmodel.get_termini(rmsds)
+        termini = molmodel.get_termini( \
+                    rmsds, \
+                    termini_with_signalsequence=termini_with_signalsequence)
 
         multimer_n = get_multimer_n(file)
 
@@ -85,12 +88,12 @@ def model_2fold_to_plane(model_id, meta, session):
     tmp_dir = filesystem.clean_path( \
             os.path.dirname(os.path.realpath(__file__))+'/../../')
     tmpfile = tmp_dir+'tmp.pdb'
-    session.run('save '+tmpfile+' models #'+str(model_id))
+    session.save_models([model], tmpfile, 'pdb')
 
+    tmp_model_id = session.open_model(tmpfile)
     tmp_model = Model(session.model_reg)
-    tmp_model.set_id((model_id+1,))
-    session.run('open "'+tmpfile+'"')
-    session.run('split #'+tmp_model.idstr)
+    tmp_model.set_id(tmp_model_id)
+    session.split_model(tmp_model.id)
     session.run('match #'+tmp_model.idstr+'.2 to #'+tmp_model.idstr+'.1')
     re = session.run('measure rotation #'+tmp_model.idstr+'.2 toModel #'+ \
                      tmp_model.idstr+'.1'+' showAxis false')
@@ -116,33 +119,35 @@ def model_2fold_to_plane(model_id, meta, session):
     main_dir = filesystem.clean_path( \
             os.path.dirname(os.path.realpath(__file__))+'/../')
 
-    session.run('open "'+main_dir+'/component_files/marker.pdb'+'"')
+    marker_id = session.open_model(main_dir+'/component_files/marker.pdb')
+    marker = Model(session.model_reg)
+    marker.set_id(marker_id)
 
     session.run('move x '+str(center0[0]+normal[0])+ \
-                ' models #'+tmp_model.idstr)
+                ' models #'+marker.idstr)
     session.run('move y '+str(center0[1]+normal[1])+ \
-                ' models #'+tmp_model.idstr)
+                ' models #'+marker.idstr)
     session.run('move z '+str(center0[2]+normal[2])+ \
-                ' models #'+tmp_model.idstr)    
+                ' models #'+marker.idstr)    
 
-    session.combine_models([model, tmp_model], str(tmp_model.id[0]+1))
+    session.combine_models([model, marker], str(marker.id[0]+1))
     session.run('marker #201 position '+str(normal[0])+','+ \
                 str(normal[1])+','+str(normal[2])+' color yellow radius 1')
 
-    cmd_align = 'align #'+str(tmp_model.id[0]+1)+'/A:'+str(center_res)+'@CA '+ \
-                 '#'+str(tmp_model.id[0]+1)+'/B:'+str(center_res)+'@CA '+ \
-                 '#'+str(tmp_model.id[0]+1)+'/C:1@CA '+ \
+    cmd_align = 'align #'+str(marker.id[0]+1)+'/A:'+str(center_res)+'@CA '+ \
+                 '#'+str(marker.id[0]+1)+'/B:'+str(center_res)+'@CA '+ \
+                 '#'+str(marker.id[0]+1)+'/C:1@CA '+ \
                  'toAtoms #100,101,102'
     ctl.d(cmd_align)
     session.run(cmd_align)
 
     session.close_id(tmp_model.id)
 
-    session.run('split #'+str(tmp_model.id[0]+1))
+    session.split_model((tmp_model.id[0]+1,))
     session.close_id((tmp_model.id[0]+1, 3))
 
-    ctl.d(model.idstr+'.1')
-    ctl.d(str(tmp_model.id[0]+1)+'.1')
+    ctl.d(model.id)
+    ctl.d(str(model.id[0]+1))
 
     session.match(model.id, [], tmp_model.id[0]+1, model.id, \
                   model_chainid='A', match_to_chainid='A')

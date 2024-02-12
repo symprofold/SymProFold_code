@@ -382,14 +382,9 @@ class Assembler():
                 diff_fixppoint = current_model_alignment_fixppoint_xyz- \
                                  model_tmp_alignment_fixppoint_xyz
 
-                sess.run('move x '+str(diff[0])+ \
-                                         ' models #'+str(model_id_tmp[0]))
-                sess.run('move y '+str(diff[1])+ \
-                                         ' models #'+str(model_id_tmp[0]))
-
-                # align z regarding pivot_res
-                sess.run('move z '+str(diff_fixppoint[2])+ \
-                         ' models #'+str(model_id_tmp[0]))
+                sess.move_model(model_id_tmp, \
+                                [diff[0], diff[1], diff_fixppoint[2]])
+                        # diff_fixppoint[2]: align z regarding pivot_res
 
 
                 # determine rotational symmetry axis of ax1 SymPlex
@@ -420,14 +415,11 @@ class Assembler():
                     diff_fixppoint_ = current_model_alignment_fixppoint_xyz- \
                                      model_tmp_alignment_fixppoint_xyz_
 
+                    # correct y shift inverted by 180 degree turn around x,
                     # correct z shift after 180 degree turn around x
-                    sess.run('move z '+str(diff_fixppoint_[2])+ \
-                             ' models #'+str(model_id_tmp[0]))
+                    sess.move_model(model_id_tmp, \
+                                [0, 2*diff[1], diff_fixppoint_[2]])
 
-                    # correct y shift inverted by 180 degree turn around x
-                    sess.run('move y '+str(2*diff[1])+ \
-                             ' models #'+str(model_id_tmp[0]))
-              
 
                 # determine rotation angle after flip that may have occurred
                 rotang, dist = sess.get_rot_angle_z( \
@@ -470,7 +462,7 @@ class Assembler():
                 # check orientation of ax1 rotational symmetry axis
                 if rotsymm_axis[2] < 0:
                     ctl.e(rotsymm_axis)
-                    ctl.error('build_layer: rotsymm_axis[2] < 0')
+                    ctl.error('Assembler: build_layer: rotsymm_axis[2] < 0')
 
 
                 # check if axial tilt of ax1 (rotational symmetry axis) is
@@ -481,7 +473,7 @@ class Assembler():
                 if abs(ax1_tilt_deg) > 45:
                     ctl.p(rotsymm_axis)
                     ctl.p(ax1_tilt_deg)
-                    ctl.e('build_layer: '+ \
+                    ctl.e('Assembler: build_layer: '+ \
                               'tilt of ax1 not within range')
                     raise Exception('build_layer: '+ \
                               'tilt of ax1 not within range')
@@ -604,10 +596,8 @@ class Assembler():
                             'rename #'+ax0_current_model.idstr+'.'+str(i)+ \
                             ' ax'+str(2+ax0.fold+ax1_model_i)+'mol'+str(i))
 
-                    sess.run('move x '+str(ax0_model.trans_vect[0])+ \
-                        ' models #'+ax0_current_model.idstr)
-                    sess.run('move y '+str(ax0_model.trans_vect[1])+ \
-                        ' models #'+ax0_current_model.idstr)
+                    sess.move_model(ax0_current_model.id, \
+                        [ax0_model.trans_vect[0], ax0_model.trans_vect[1], 0])
 
                     # set connections, use correct submodels for each
                     # representant
@@ -630,7 +620,7 @@ class Assembler():
             self.export_meta(ax0, meta_path+export_file_prefix+'.txt')
 
         sess.run('rainbow')
-        sess.run('save "'+self.conf.layer_raw_path+'"')
+        sess.save_models('all', self.conf.layer_raw_path)
 
         return
 
@@ -819,7 +809,7 @@ class Assembler():
 
         if flatten_mode >= 2:
             if len(snapin_file) != 1:
-                ctl.error('process_layer: len(snapin_file) != 1')
+                ctl.error('Assembler: process_layer: len(snapin_file) != 1')
 
             ax0.chimerax_session.run('open "'+ \
                     self.conf.layer_snapin_raw_path+'"')
@@ -1174,7 +1164,7 @@ class Assembler():
                 if mode == 'snapin':
                     ctl.d(mode)
                     ctl.d(flatten)
-                    ctl.d('merge_protein_fragments: snapin 1')
+                    ctl.d('Assembler: merge_protein_fragments: snapin 1')
                     ctl.d(to_join)
 
                 c1 = ax0.model_reg.get_model(int(tj[0].split('.')[0])). \
@@ -1187,7 +1177,7 @@ class Assembler():
                     ctl.d(tj)
                     ctl.d(c1)
                     ctl.d(c2)
-                    ctl.d('merge_protein_fragments: '+ \
+                    ctl.d('Assembler: merge_protein_fragments: '+ \
                               'unequal get_connections, 1')
 
                 if c2 == False and c1 != False:
@@ -1197,7 +1187,7 @@ class Assembler():
                     ctl.d(tj)
                     ctl.d(c1)
                     ctl.d(c2)
-                    ctl.d('merge_protein_fragments: '+ \
+                    ctl.d('Assembler: merge_protein_fragments: '+ \
                           'unequal get_connections, 2')
                     continue
 
@@ -1223,10 +1213,10 @@ class Assembler():
             all_joins += to_join
 
             for tj in to_join:
-                if mode=='snapin':
+                if mode == 'snapin':
                     ctl.d(mode)
                     ctl.d(flatten)
-                    ctl.d('merge_protein_fragments: snapin 2')
+                    ctl.d('Assembler: merge_protein_fragments: snapin 2')
                     ctl.d(to_join)
 
                 c1 = ax0.model_reg.get_model(int(tj[0].split('.')[0])). \
@@ -1238,21 +1228,21 @@ class Assembler():
                     ctl.e(tj)
                     ctl.e(c1)
                     ctl.e(c2)
-                    ctl.error('merge_protein_fragments: '+ \
+                    ctl.error('Assembler: merge_protein_fragments: '+ \
                               'unequal get_connections, 3')
 
                 if c2 == False and c1 != False:
                     ctl.e(tj)
                     ctl.e(c1)
                     ctl.e(c2)
-                    ctl.error('merge_protein_fragments: '+ \
+                    ctl.error('Assembler: merge_protein_fragments: '+ \
                               'unequal get_connections, 4')
 
                 if c1 != False and c2 != False:
                     ctl.d(tj)
                     ctl.d(c1)
                     ctl.d(c2)
-                    ctl.d('merge_protein_fragments: '+ \
+                    ctl.d('Assembler: merge_protein_fragments: '+ \
                           'both already existing, 6')
                     continue
 

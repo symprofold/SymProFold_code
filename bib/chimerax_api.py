@@ -94,6 +94,23 @@ class ChimeraxSession():
         return opened_model_id
 
 
+    def save_models(self, models, path, filetype='pdb'):
+        '''
+        Save models.
+        '''
+        if models == 'all':
+            models_idstr = ''
+        else:
+            models_idstr = 'models '+self.ids_str(models)
+
+        if filetype == 'pdb':
+            self.run('save "'+path+'" '+models_idstr)
+        else:
+            self.run('save "'+path+'" '+models_idstr)
+
+        return
+
+
     def get_xyz(self, model_id, resid, atomid='CA', \
                 error_when_res_not_found=True):
         ''' Get coordinates (x, y, z) of a residue (model_id, resid). '''
@@ -133,6 +150,20 @@ class ChimeraxSession():
             ctl.error('get_xyz: no unique coord found for resid')
 
         return coord_found[0]
+
+
+    def move_model(self, model_id, vect):
+        '''
+        Move model.
+        '''
+        model_id = self.model_reg.convert_model_id(model_id)
+        model_id_str = self.model_reg.convert_model_id_to_str(model_id)
+
+        self.run('move x '+str(vect[0])+' models #'+model_id_str)
+        self.run('move y '+str(vect[1])+' models #'+model_id_str)
+        self.run('move z '+str(vect[2])+' models #'+model_id_str)
+
+        return
 
 
     def get_coord_using_getcrd_command(self, idstr):
@@ -342,6 +373,18 @@ class ChimeraxSession():
         if self.model_reg.model_exists(model_id) == True:
             if self.model_reg.check_model_writeprotection(model_id) == False:
                 self.model_reg.remove_model(model_id)
+
+        return
+
+
+    def split_model(self, model_id):
+        '''
+        Split model in submodels.
+        '''
+        model_id = self.model_reg.convert_model_id(model_id)
+        model_id_str = self.model_reg.convert_model_id_to_str(model_id)
+
+        self.run('split #'+model_id_str)
 
         return
 

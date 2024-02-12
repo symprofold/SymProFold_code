@@ -21,7 +21,7 @@ import shutil
 Module providing functions for model preparation of a single coord file.
 '''
 
-def prepare_file(f0, seq, path_export, sess, verbous=False, interation=0):
+def prepare_file(f0, seq, path_export, sess, verbous=False, iteration=0):
     '''
     Prepare a single coord file.
     '''
@@ -53,7 +53,9 @@ def prepare_file(f0, seq, path_export, sess, verbous=False, interation=0):
     # preprocessing of pdb input file
     model_preparation.chain_numbering.realign_chain_ids(f0, f, f)
         
-    current_model_id, meta = bib.open_model(sess, f, current_model_id, meta, 1)
+    current_model_id, meta = bib.open_model(sess, f, current_model_id, \
+                                            meta, 1, \
+                                            termini_with_signalsequence=False)
 
     # continue if whole model disordered (large rmsds)
     if meta[current_model_id][1][0] == -1 or \
@@ -65,23 +67,23 @@ def prepare_file(f0, seq, path_export, sess, verbous=False, interation=0):
     # determination of number of chains in 2 ways and check for agreement
     resids = sess.resids(current_model_id)
     res_n = sess.get_res_n((current_model_id,))
-    mult = res_n/(resids[-1]-resids[0]+1)
+    mol_count = res_n/(resids[-1]-resids[0]+1)
 
-    if mult%1 > 0.001:
-        ctl.e(mult)
+    if mol_count%1 > 0.001:
+        ctl.e(mol_count)
         ctl.error('unclear number of chains')
     else:
-        mult = int(mult)
+        mol_count = int(mol_count)
 
-    mult2 = bib.get_multimer_n(f)
+    mol_count2 = bib.get_multimer_n(f)
 
-    if mult != mult2:
-        ctl.e(mult)
-        ctl.e(mult2)
+    if mol_count != mol_count2:
+        ctl.e(mol_count)
+        ctl.e(mol_count2)
         ctl.error('unclear number of chains')
 
     # continue if not at least 2 chains
-    if mult <= 1:
+    if mol_count <= 1:
 
         return
 
@@ -90,7 +92,7 @@ def prepare_file(f0, seq, path_export, sess, verbous=False, interation=0):
     # chain.
     roll_clash_postfix, zero = model_preparation.clashes. \
                                     clashes_per_100_rolling(
-                                        current_model_id, 200, mult, sess)
+                                        current_model_id, 200, mol_count, sess)
 
     # get clashes per 100aa
     clash_postfix, zero = model_preparation.clashes. \
@@ -123,8 +125,9 @@ def prepare_file(f0, seq, path_export, sess, verbous=False, interation=0):
         sess.run('turn x 180 models #'+str(current_model_id))
         sess.run('save "'+f+'" #'+str(current_model_id)+' ')
 
-        current_model_id, meta = bib.open_model(sess, f, current_model_id, \
-                                                meta, 1)
+        current_model_id, meta = bib.open_model( \
+                sess, f, current_model_id, meta, 1, \
+                termini_with_signalsequence=False)
          
         coord = bibpdb.open_pdb(f, False)
         cen = geometry.get_center(coord, 'all', meta[current_model_id][1])
@@ -139,19 +142,19 @@ def prepare_file(f0, seq, path_export, sess, verbous=False, interation=0):
 
     # counterclockwise renaming of chain ids
     # --------------------------------------
-    if mult >= 3:
+    if mol_count >= 3:
         coord = bibpdb.open_pdb(f, False)     
         complexcenter = geometry.get_center(coord, 'all', \
                                             meta[current_model_id][1])
         order = model_preparation.chain_numbering. \
                     determine_subchain_order(coord, meta[current_model_id], \
-                                             mult)
+                                             mol_count)
 
         # reverse order of chain ids if orientation is not counterclockwise
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if order == -1:
             # preparation: flip order when clockwise
-            multimer_n = mult
+            multimer_n = mol_count
 
             order_flipped = []
             for i in range(multimer_n-1, -1, -1):
@@ -166,7 +169,7 @@ def prepare_file(f0, seq, path_export, sess, verbous=False, interation=0):
 
         order = model_preparation.chain_numbering. \
                     determine_subchain_order(coord, meta[current_model_id], \
-                                             mult)
+                                             mol_count)
 
         if order == -1:
             ctl.d('order')
@@ -181,7 +184,7 @@ def prepare_file(f0, seq, path_export, sess, verbous=False, interation=0):
           ctl.d(order)
           bibpdb.reorder_chainids(f, order)
      
-    ctl.d(mult)
+    ctl.d(mol_count)
     ctl.d(symmaxis)
 
 
@@ -210,9 +213,11 @@ def prepare_file(f0, seq, path_export, sess, verbous=False, interation=0):
     # Rotation angles are determined by superposition of the interfaces.
 
     current_model_id, meta = \
-            bib.open_model(sess, f, current_model_id, meta)
+            bib.open_model(sess, f, current_model_id, meta, \
+                           termini_with_signalsequence=False)
     current_model_id, meta = \
-            bib.open_model(sess, f, current_model_id, meta)
+            bib.open_model(sess, f, current_model_id, meta, \
+                           termini_with_signalsequence=False)
 
     # determination of interface residues
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -233,15 +238,15 @@ def prepare_file(f0, seq, path_export, sess, verbous=False, interation=0):
 
     rotang, rot_axis, rot_axis_point, rmsd, mate_distances = \
             model_preparation.geometry.get_nn_rotation(current_model_id-1, \
-                        current_model_id, interface_res_range, mult, \
+                        current_model_id, interface_res_range, mol_count, \
                         sess)
 
     rot_axes_point_average, uniqueness = \
             model_preparation.rotsymm_ax.check_uniqueness( \
                                     rot_axis_point, rot_axis, f, \
-                                    True if mult >= 3 else False)
+                                    True if mol_count >= 3 else False)
 
-    if mult >= 3:
+    if mol_count >= 3:
         if uniqueness == False:
             ctl.d('no unique rotation symmetry axis')
             f_info = open(f+'_no_unique_rot_axis.txt', 'w')
@@ -265,7 +270,7 @@ def prepare_file(f0, seq, path_export, sess, verbous=False, interation=0):
         rotang_mat, rot_axis_mat, rot_axis_point_mat = \
                 model_preparation.geometry.get_pairwise_rotation( \
                         current_model_id-1, \
-                        current_model_id, interface_res_range, mult, 
+                        current_model_id, interface_res_range, mol_count, 
                         sess)
 
         if verbous:
@@ -308,12 +313,13 @@ def prepare_file(f0, seq, path_export, sess, verbous=False, interation=0):
         f_cl.close()
 
 
-        if mult > 2 and microorganism_type == 1 and interation == 0:
+        if mol_count > 2 and microorganism_type == 1 and iteration == 0:
 
             # determine interface residues to avoid processing of oligomers
             # w/o contact
             interface_res_mat = interface_matrix_signed. \
-                get_pairwise_interface_residues(current_model_id, mult, sess)
+                    get_pairwise_interface_residues( \
+                            current_model_id, mol_count, sess)
 
             # determination of rotational symmetry axes
             rot_axes = RotSymmAxes(rot_axis_point_mat, rotang_mat, \
@@ -327,7 +333,7 @@ def prepare_file(f0, seq, path_export, sess, verbous=False, interation=0):
             files_written = rot_axes.write_symplexes(current_model_id, sess)
 
             for file in files_written:
-                prepare_file(file, seq, path_export, sess, False, interation+1)
+                prepare_file(file, seq, path_export, sess, False, iteration+1)
 
     else:
         # unique axis of rotational symmetry found
@@ -343,8 +349,10 @@ def prepare_file(f0, seq, path_export, sess, verbous=False, interation=0):
         f_info.write(str(rmsd))
         f_info.close()
 
-        current_model_id, meta = bib.open_model(sess, f, \
-                                                current_model_id, meta)
+        current_model_id, meta = bib.open_model( \
+                                        sess, f, \
+                                        current_model_id, meta, \
+                                        termini_with_signalsequence=False)
         sess.run('move x '+str((-1)*rot_axes_point_average[0])+ \
                  ' models  #'+str(current_model_id))
         sess.run('move y '+str((-1)*rot_axes_point_average[1])+ \
@@ -352,7 +360,7 @@ def prepare_file(f0, seq, path_export, sess, verbous=False, interation=0):
         sess.run('save "'+f+'" #'+str(current_model_id)+' ')  
         bibpdb.clean_pdb(f)
 
-        if mult >= 2:
+        if mol_count >= 2:
             multiplicities = params.get_multiplicities(path_export+'../', \
                                                 microorganism_type)
 
@@ -363,7 +371,7 @@ def prepare_file(f0, seq, path_export, sess, verbous=False, interation=0):
                 symm_ang_infix = ('000'+str(round(symm_ang)))[-3:]
 
                 rotang_cleaned = model_preparation.geometry. \
-                                    clean_rotang(rotang, multiplicity, mult)
+                                clean_rotang(rotang, multiplicity, mol_count)
 
                 d0 = 15
                 d1 = 15
@@ -383,7 +391,7 @@ def prepare_file(f0, seq, path_export, sess, verbous=False, interation=0):
                         d0 = 4
 
                 # rule out that e.g. 4mer results in 2fold axis
-                if mult <= multiplicity:
+                if mol_count <= multiplicity:
                     if abs(max(rotang_cleaned)-symm_ang) < d0 and \
                        abs(min(rotang_cleaned)-symm_ang) < d1:
                         try:
@@ -442,11 +450,12 @@ def prepare_file(f0, seq, path_export, sess, verbous=False, interation=0):
 
 
                         # calculate and export non-zero interface
-                        # matrix elements from first two monomers in the
+                        # matrix elements for the first two monomers in the
                         # SymPlex candidate
-                        # ----------------------------------------------
+                        # -------------------------------------------------
                         current_model_id, meta = bib.open_model( \
-                                sess, f, current_model_id, meta)
+                                sess, f, current_model_id, meta, \
+                                termini_with_signalsequence=False)
 
                         interface_residues = sess.get_interface_residues( \
                                 (current_model_id, 1), (current_model_id, 2))
@@ -461,12 +470,33 @@ def prepare_file(f0, seq, path_export, sess, verbous=False, interation=0):
 
 
                         # calculate and export non-zero interface
-                        # matrix (signed interface matrix) elements from first
-                        # two monomers in the SymPlex candidate
-                        # ----------------------------------------------------
+                        # matrix (signed interface matrix) elements for
+                        # monomer pairs in the SymPlex candidate
+                        # ---------------------------------------------
                         rmsds = bibpdb.get_rmsds(f)
-                        interface_mat_signed = interface_matrix_signed. \
-                                create(interface_residues, rmsds, sess)
+                        interface_mat_signed = {}
+
+                        for monomer0 in range(1, mol_count):
+                            interface_residues = sess.get_interface_residues( \
+                                (current_model_id, monomer0), \
+                                (current_model_id, monomer0+1))
+
+                            interface_mat_signed_ = interface_matrix_signed. \
+                                        create(interface_residues, rmsds, sess)
+
+                            interface_mat_signed.update(interface_mat_signed_)
+
+                        if mol_count >= 3:
+                            interface_residues = \
+                                sess.get_interface_residues( \
+                                (current_model_id, 1), \
+                                (current_model_id, mol_count))
+
+                            interface_mat_signed_ = interface_matrix_signed. \
+                                        create(interface_residues, rmsds, sess)
+
+                            interface_mat_signed.update(interface_mat_signed_)
+
 
                         fn = path_export+ \
                                 'symm_'+symm_ang_infix+'/interfaces/'+ \

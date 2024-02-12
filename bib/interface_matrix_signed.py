@@ -29,8 +29,8 @@ def create(interface_res, rmsds, sess):
 
             for r0 in interface_residues[model_id0]:
                 for r1 in interface_residues[model_id1]:
-                    r0_coords =  sess.get_xyz(model_id0, r0)
-                    r1_coords =  sess.get_xyz(model_id1, r1)
+                    r0_coords = sess.get_xyz(model_id0, r0)
+                    r1_coords = sess.get_xyz(model_id1, r1)
                     d = geometry.dist(r0_coords, r1_coords)
                     key = ((model_id0[1], model_id1[1]), r0, r1)
 
@@ -187,7 +187,36 @@ def export_to_txt(matrix_elements, path_file):
     return
 
 
-def load(path, excl_res=[]):
+def monomers_involved(path, excl_res=[]):
+    '''
+    Determine all distinct monomer pairs involved in interfaces described
+    by the interface distogram.
+    '''
+    fn = path.split('/')[-1]
+    fn_part1 = '_'.join(fn.split('_')[0:-1])
+    path_dir = os.path.dirname(path)+'/'
+    path_dir2 = filesystem.clean_path(path_dir+'../interfaces/')
+
+    file = path_dir2+fn_part1+'_interface_signed.txt'
+    files = sorted(glob.glob(file))
+
+    if len(files) != 1:
+        return {}
+
+    f = filesystem.get_file(file)
+
+    monomers_involved = []
+
+    for i,l in enumerate(f):
+        l2 = l.split(';')
+        if len(l2) >= 2:
+            if (int(l2[0]), int(l2[1])) not in monomers_involved:
+                monomers_involved.append((int(l2[0]), int(l2[1])))
+
+    return monomers_involved
+
+
+def load(path, excl_res=[], monomers_involved=[1, 2]):
     '''
     Load interface distogram.
     '''
@@ -209,10 +238,12 @@ def load(path, excl_res=[]):
     for i,l in enumerate(f):
         l2 = l.split(';')
         if len(l2) >= 2:
-            if int(l2[2]) not in excl_res and int(l2[3]) not in excl_res:
-                key = (int(l2[2]), int(l2[3]))
-                matr[key] = [round(float(l2[4]), 2), \
-                             round(float(l2[5]), 2), \
-                             round(float(l2[6]), 2)]
+            if monomers_involved[0] == int(l2[0]) and \
+               monomers_involved[1] == int(l2[1]):
+                if int(l2[2]) not in excl_res and int(l2[3]) not in excl_res:
+                    key = (int(l2[2]), int(l2[3]))
+                    matr[key] = [round(float(l2[4]), 2), \
+                                 round(float(l2[5]), 2), \
+                                 round(float(l2[6]), 2)]
 
     return matr
