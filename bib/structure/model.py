@@ -38,3 +38,12 @@ class Model():
         ''' Set Chimerax session. '''
         self.chimerax_session = session # object
         return
+
+
+    def move_model(self, vect):
+        '''
+        Move model.
+        '''
+        self.chimerax_session.move_model(self.id, vect)
+
+        return

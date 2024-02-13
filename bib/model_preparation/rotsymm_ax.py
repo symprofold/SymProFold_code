@@ -186,7 +186,7 @@ def check_uniqueness(rot_axis_points, rot_axes, file, verbous=False):
         if rot_ax_deviation > rot_axis_point_max_dev_xy:
             if verbous:
                 f_info = open(file+'_rotax_dev_'+ \
-                              str(round(rot_ax_deviation, 1))+ \
+                              str(round(rot_ax_deviation, 3))+ \
                               '_exceeds_cutoff.txt', 'w')
                 f_info.write('') 
                 f_info.close()  

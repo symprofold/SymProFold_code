@@ -276,12 +276,11 @@ class Assembler():
 
         for l in self.layers:
             l.add_representation(ax0_current_model)
-        bib.format_model(ax0_current_model.id, ax0)
 
         # set name to submodels of ax0 representant
         for i in range(1, 1+ax0.fold):
-            sess.run('rename #'+ax0_current_model.idstr+'.'+str(i)+ \
-                    ' ax'+ax0_current_model.idstr+'mol'+str(i))
+            sess.rename_model((ax0_current_model.id[0], i), \
+                    'ax'+ax0_current_model.idstr+'mol'+str(i))
 
 
         # continue, if more than 1 axis object is provided as input
@@ -308,7 +307,6 @@ class Assembler():
                 ax1_current_model = ax1.open_model()
                 layer.add_representation(ax1_current_model)
                 layer_flat.add_representation(ax1_current_model)
-                bib.format_model(ax1_current_model.id, ax1)
 
                 renamed = False # avoid 2x renaming of chain ids
 
@@ -320,20 +318,20 @@ class Assembler():
 
                         # inverse chain ids for flipped symplex
                         # ax1_submodel_id is fixed
-
-                        sess.run('rename #'+ax1_current_model.idstr+'.'+ \
-                                str((ax1_submodel_id_fixed+ii-1)%ax1.fold+1)+ \
-                                ' id #'+ax1_current_model.idstr+'.'+ \
-                                str(10+(ax1.fold+ax1_submodel_id_fixed-ii-1)% \
-                                ax1.fold+1))
+                        sess.change_model_id( \
+                                (ax1_current_model.id[0], \
+                                    (ax1_submodel_id_fixed+ii-1)%ax1.fold+1), \
+                                (ax1_current_model.id[0], \
+                                    10+(ax1.fold+ax1_submodel_id_fixed-ii-1)% \
+                                    ax1.fold+1) )
                         intermediate_ids.append( \
-                                10+(ax1.fold+ax1_submodel_id_fixed-ii-1)% \
-                                ax1.fold+1)
+                                    10+(ax1.fold+ax1_submodel_id_fixed-ii-1)% \
+                                    ax1.fold+1)
 
                     for ii in intermediate_ids:
-                        sess.run('rename #'+ \
-                                ax1_current_model.idstr+'.'+str(ii)+ \
-                                ' id #'+ax1_current_model.idstr+'.'+str(ii-10))
+                        sess.change_model_id( \
+                                (ax1_current_model.id[0], ii), \
+                                (ax1_current_model.id[0], (ii-10)) )
 
                     renamed = True # avoid 2x renaming of chain ids
 
@@ -362,9 +360,8 @@ class Assembler():
                                                     self.alignment_pivot_pos]
 
 
-                sess.run('open "'+ax1.model_active_path+'"')
-                model_id_tmp = (ax1_current_model.id[0]+1,)
-                sess.run('split #'+str(model_id_tmp[0]))
+                model_id_tmp = sess.open_model(ax1.model_active_path)
+                sess.split_model(model_id_tmp)
 
                 model_tmp_center = structure.complex_.get_center(
                         model_id_tmp, \
@@ -401,12 +398,7 @@ class Assembler():
                     ax1.model_active_orient = -1
 
                     # flip from bottom to top
-                    sess.run('turn x 180'+ \
-                         ' center '+ \
-                         str(model_tmp_center[0])+', '+ \
-                         str(model_tmp_center[1])+', '+ \
-                         str(model_tmp_center[2])+ \
-                         ' models #'+str(model_id_tmp[0]))
+                    sess.turn_model(model_id_tmp, 0, 180, model_tmp_center)
 
                     model_tmp_alignment_fixppoint_xyz_ = \
                         sess.get_xyz((model_id_tmp[0], ax1_submodel_id), \
@@ -441,18 +433,19 @@ class Assembler():
 
                             # inverse chain ids for flipped symplex
                             # ax1_submodel_id is fixed
-                            sess.run('rename #'+ax1_current_model.idstr+'.'+ \
-                                str((ax1_submodel_id+ii-1)%ax1.fold+1)+ \
-                                ' id #'+ax1_current_model.idstr+'.'+ \
-                                str(10+(ax1.fold+ax1_submodel_id-ii-1)% \
-                                ax1.fold+1))
+                            sess.change_model_id( \
+                                    (ax1_current_model.id[0], \
+                                        (ax1_submodel_id+ii-1)%ax1.fold+1), \
+                                    (ax1_current_model.id[0], \
+                                        10+(ax1.fold+ax1_submodel_id-ii-1)% \
+                                        ax1.fold+1) )
                             intermediate_ids.append( \
                                 10+(ax1.fold+ax1_submodel_id-ii-1)%ax1.fold+1)
 
                         for ii in intermediate_ids:
-                            sess.run('rename #'+ \
-                                ax1_current_model.idstr+'.'+str(ii)+ \
-                                ' id #'+ax1_current_model.idstr+'.'+str(ii-10))
+                            sess.change_model_id( \
+                                    (ax1_current_model.id[0], ii), \
+                                    (ax1_current_model.id[0], (ii-10)) )
 
 
                 # determine rotational symmetry axis of ax1
@@ -490,13 +483,8 @@ class Assembler():
                     
                     model_tmp_rotang = ax1_current_model.rot_angle
 
-                    sess.run('turn z '+str(model_tmp_rotang)+ \
-                         ' center '+ \
-                         str(model_tmp_center[0])+', '+ \
-                         str(model_tmp_center[1])+', '+ \
-                         str(model_tmp_center[2])+ \
-                         ' models #'+ \
-                         sess.model_reg.convert_model_id_to_str(model_id_tmp))
+                    sess.turn_model(model_id_tmp, 2, model_tmp_rotang, \
+                                    model_tmp_center)
 
                     model_tmp_domain_center = structure.monomer.get_center( \
                             (ax1_current_model.id[0], \
@@ -527,7 +515,6 @@ class Assembler():
                 for ax1_model_i,ax1_model in enumerate(ax1_models):
                     ax0_current_model = ax0.open_model()
                     layer.add_representation(ax0_current_model)
-                    bib.format_model(ax0_current_model.id, ax0)
 
                     source_submodel_id = self.ax1_contact_submodel_1( \
                                         ax1_model_i+1, \
@@ -547,16 +534,12 @@ class Assembler():
 
                     # set name to submodels of ax0 representant
                     for i in range(1,1+ax0.fold):
-                        sess.run('rename #'+ \
-                                ax0_current_model.idstr+'.'+str(i)+ \
-                                ' ax'+str(2+ax1_model_i)+'mol'+str(i))
+                        sess.rename_model((ax0_current_model.id[0], i), \
+                                'ax'+str(2+ax1_model_i)+'mol'+str(i))
 
                     # determine rotation of ax0 representant
-                    re = sess.run('measure rotation #'+ \
-                            ax0_current_model.idstr+'.1'+ \
-                            ' toModel #1.1 showAxis false')
-
-                    transl_vec = chimerax_api.get_transl_vec(re.description())
+                    transl_vec = sess.measure_transl_vec( \
+                                        (ax0_current_model.id[0], 1), (1, 1))
                     ax0_current_model.set_trans_vect(transl_vec)
 
 
@@ -571,32 +554,27 @@ class Assembler():
                     ax0_current_model.set_trans_vect(ax0_model.trans_vect)
 
                     layer_flat.add_representation(ax0_current_model)
-                    bib.format_model(ax0_current_model.id, ax0)
 
 
                     # perform rotation if necessary
                     if ax0.fold == 3 and ax1.fold == 2:
-                        rot_center = ax0_current_model.get_center()
-
                         if ax0.get_representation(1).flipped == True:
                             sign = -1
                         else:
                             sign = 1
 
-                        sess.run('turn z '+str(-60*sign)+' center '+ \
-                                 str(rot_center[0])+', '+ \
-                                 str(rot_center[1])+', '+ \
-                                 str(rot_center[2])+ \
-                                 ' models #'+ax0_current_model.idstr)
+                        sess.turn_model(ax0_current_model.id, \
+                                        2, -60*sign, \
+                                        ax0_current_model.get_center())
 
 
                     # set name to submodels of ax0 representant
                     for i in range(1, 1+ax0.fold):
-                        sess.run( \
-                            'rename #'+ax0_current_model.idstr+'.'+str(i)+ \
-                            ' ax'+str(2+ax0.fold+ax1_model_i)+'mol'+str(i))
+                        sess.rename_model( \
+                            (ax0_current_model.id[0], i), \
+                            'ax'+str(2+ax0.fold+ax1_model_i)+'mol'+str(i))
 
-                    sess.move_model(ax0_current_model.id, \
+                    ax0_current_model.move_model( \
                         [ax0_model.trans_vect[0], ax0_model.trans_vect[1], 0])
 
                     # set connections, use correct submodels for each
@@ -619,7 +597,7 @@ class Assembler():
                                  self.export_file_infix
             self.export_meta(ax0, meta_path+export_file_prefix+'.txt')
 
-        sess.run('rainbow')
+        sess.format_session()
         sess.save_models('all', self.conf.layer_raw_path)
 
         return
@@ -679,7 +657,7 @@ class Assembler():
         # align layer_flat to ref points and move all other models relative to
         # it
         if len(self.axes) > 1 and max(self.conf.flatten_modes) >= 1:
-            ax0.chimerax_session.run('open "'+self.conf.layer_raw_path+'"')
+            ax0.chimerax_session.open_session(self.conf.layer_raw_path)
 
             align_layer.align_layer(self.axes, \
                                     self.layers[1], \
@@ -691,8 +669,7 @@ class Assembler():
         # snapin ax0s to ref points
         snapin_file = sorted(glob.glob(self.conf.layer_snapin_raw_path))
         if max(self.conf.flatten_modes) >= 2:
-            ax0.chimerax_session. \
-                    run('open "'+self.conf.layer_aligned_raw_path+'"')
+            ax0.chimerax_session.open_session(self.conf.layer_aligned_raw_path)
             snapin.snapin_layer(self.axes, self.layers[1], self.conf, \
                                 preserve_connections)
             snapin_file = sorted(glob.glob(self.conf.layer_snapin_raw_path))
@@ -801,18 +778,18 @@ class Assembler():
         ax0.chimerax_session.init()
 
         if len(aligned_file) == 1:
-            ax0.chimerax_session.run('open "'+ \
-                    self.conf.layer_aligned_raw_path+'"')
+            ax0.chimerax_session.open_session( \
+                    self.conf.layer_aligned_raw_path)
         else:
-            ax0.chimerax_session.run('open "'+ \
-                    self.conf.layer_raw_path+'"')
+            ax0.chimerax_session.open_session( \
+                    self.conf.layer_raw_path)
 
         if flatten_mode >= 2:
             if len(snapin_file) != 1:
                 ctl.error('Assembler: process_layer: len(snapin_file) != 1')
 
-            ax0.chimerax_session.run('open "'+ \
-                    self.conf.layer_snapin_raw_path+'"')
+            ax0.chimerax_session.open_session( \
+                    self.conf.layer_snapin_raw_path)
 
 
         # reset connected flag ax0

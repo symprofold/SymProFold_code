@@ -27,14 +27,19 @@ class ChimeraxSession():
         return
 
 
-    def init(self):
+    def init(self, graphics=True, reset_center_of_rotation=True):
         '''
         Initialization of new session in the ChimeraX application.
         '''
         run(self.session, 'close session')
-        run(self.session, 'camera ortho')
+
+        if graphics:
+            run(self.session, 'camera ortho')
+
         run(self.session, 'set bgColor white')
-        run(self.session, 'cofr 0,0,0 showPivot 10,0.3')        
+
+        if reset_center_of_rotation:
+            self.reset_center_of_rotation()
 
         return
 
@@ -50,17 +55,20 @@ class ChimeraxSession():
     def get_structure(self, model_id):
         ''' Get structure model object of ChimeraX session. '''
 
-        id1 = model_id[0]
-        id2 = model_id[1]
-
         models = self.session.models.list()
         ret = []
 
         for m in models:
             if len(m.id) == len(model_id):
-
-                if m.id[0] == id1 and m.id[1] == id2:
-                    ret.append(m)
+                if len(m.id) == 1:
+                    if m.id[0] == model_id[0]:
+                        ret.append(m)
+                elif len(m.id) == 2:
+                    if m.id[0] == model_id[0] and m.id[1] == model_id[1]:
+                        ret.append(m)
+                else:
+                    ctl.error('get_structure: '+ \
+                                'no structure found to model_id')
 
         if len(ret) != 1:
             ctl.d(models)
@@ -94,6 +102,40 @@ class ChimeraxSession():
         return opened_model_id
 
 
+    def reset_center_of_rotation(self):
+        '''
+        Reset center of rotation in ChimeraX session.
+        '''
+        self.run('cofr 0,0,0 showPivot 10,0.3')
+
+        return
+
+
+    def open_session(self, path):
+        '''
+        Open ChimeraX session.
+        '''
+        opened_model_id = 0
+
+        # check if file exists
+        if not os.path.exists(path):
+            ctl.e(path)
+            ctl.error('ChimeraxSession: open_session: file does not exist.')
+
+        self.run('open "'+path+'"')
+
+        return
+
+
+    def format_session(self):
+        '''
+        Apply default formatting for ChimeraX session.
+        '''
+        self.run('rainbow')
+
+        return
+
+
     def save_models(self, models, path, filetype='pdb'):
         '''
         Save models.
@@ -111,9 +153,28 @@ class ChimeraxSession():
         return
 
 
+    def save_model_id(self, model_id, path, filetype='pdb'):
+        '''
+        Save given model id.
+        '''
+        model_id = self.model_reg.convert_model_id(model_id)
+        model_id_str = self.model_reg.convert_model_id_to_str(model_id)
+
+        models_idstr = 'models #'+model_id_str
+
+        if filetype == 'pdb':
+            self.run('save "'+path+'" '+models_idstr)
+        else:
+            self.run('save "'+path+'" '+models_idstr)
+
+        return
+
+
     def get_xyz(self, model_id, resid, atomid='CA', \
-                error_when_res_not_found=True):
-        ''' Get coordinates (x, y, z) of a residue (model_id, resid). '''
+                error_when_res_not_found=True, chainid=''):
+        '''
+        Get coordinates (x, y, z) of a residue (model_id, resid, chainid).
+        '''
 
         model_id = self.model_reg.convert_model_id(model_id)
 
@@ -123,6 +184,10 @@ class ChimeraxSession():
         res_found = []
         
         for r in residues:
+            if chainid != '':
+                if chainid != r.chain_id:
+                    continue
+
             if r.number == resid:
                 res_found.append(r)
                 break
@@ -166,6 +231,26 @@ class ChimeraxSession():
         return
 
 
+    def turn_model(self, model_id, axis, angle, center=[]):
+        '''
+        Turn model around axis.
+        '''
+        model_id = self.model_reg.convert_model_id(model_id)
+        model_id_str = self.model_reg.convert_model_id_to_str(model_id)
+
+        axis_str = ['x', 'y', 'z']
+
+        center_str = ''
+        if center != []:
+            center_str = ' center '+ \
+                        str(center[0])+', '+str(center[1])+', '+str(center[2])
+
+        self.run('turn '+axis_str[axis]+' '+str(angle)+ \
+                         center_str+' models #'+model_id_str)
+
+        return
+
+
     def get_coord_using_getcrd_command(self, idstr):
         '''
         Get coordinates (x, y, z) of a residue (model_id, resid) using the
@@ -199,7 +284,7 @@ class ChimeraxSession():
         return residues
 
 
-    def match(self, model_id, model_res_range, match_to_id, bring_id, \
+    def match(self, model_id, model_res_range, match_to_id, bring_id=None, \
               model_chainid='', match_to_chainid=''):
         ''' Superposition of model to another model. '''
 
@@ -207,7 +292,6 @@ class ChimeraxSession():
         model_id_str = self.model_reg.convert_model_id_to_str(model_id)
 
         match_to_id_str = self.model_reg.convert_model_id_to_str(match_to_id)
-        bring_id = self.model_reg.convert_model_id(bring_id)     
 
         if model_chainid != '':
             model_chainid_infix = '/'+model_chainid
@@ -224,10 +308,15 @@ class ChimeraxSession():
             model_res_range_txt = ':'+str(model_res_range[0])+'-'+ \
                                   str(model_res_range[1])
 
+        bring_id_str = ''
+        if bring_id != None:
+            bring_id = self.model_reg.convert_model_id(bring_id)
+            bring_id_str = ' bring #'+str(bring_id[0])+'.1-100'
+
         run(self.session, \
             'match #'+model_id_str+model_chainid_infix+model_res_range_txt+ \
             ' to #'+match_to_id_str+match_to_chainid_infix+ \
-            ' bring #'+str(bring_id[0])+'.1-100')
+            bring_id_str)
 
         return
 
@@ -401,6 +490,39 @@ class ChimeraxSession():
         return
 
 
+    def hide_atoms(self, model_id):
+        '''
+        Hide atoms of model id.
+        '''
+        model_id_str = self.model_reg.convert_model_id_to_str(model_id)
+
+        self.run('hide #'+model_id_str+' atoms')
+
+        return
+
+
+    def hide_cartoons(self, model_id):
+        '''
+        Hide cartoons of model id.
+        '''
+        model_id_str = self.model_reg.convert_model_id_to_str(model_id)
+
+        self.run('hide #'+model_id_str+' cartoons')
+
+        return
+
+
+    def show_cartoons(self, model_id):
+        '''
+        Show cartoons of model id.
+        '''
+        model_id_str = self.model_reg.convert_model_id_to_str(model_id)
+
+        self.run('show #'+model_id_str+' cartoons')
+
+        return
+
+
     def change_model_id(self, model_id, model_id_new):
         '''
         Change model id in ChimeraX session.
@@ -409,6 +531,17 @@ class ChimeraxSession():
         model_id_new_str = self.model_reg.convert_model_id_to_str(model_id_new)
 
         self.run('rename #'+model_id_str+' id #'+model_id_new_str)
+
+        return
+
+
+    def rename_model(self, model_id, model_name_new):
+        '''
+        Rename model in ChimeraX session.
+        '''
+        model_id_str = self.model_reg.convert_model_id_to_str(model_id)
+
+        self.run('rename #'+model_id_str+' '+model_name_new)
 
         return
 
@@ -676,15 +809,91 @@ class ChimeraxSession():
         return
 
 
-    def set_marker(self, points, start_id):
+    def set_marker(self, points, model_id_start, color='red', radius=10):
         ''' Set marker to each point in list. '''
 
+        model_id_start = self.model_reg.convert_model_id(model_id_start)
+
         for i,p in enumerate(points):
-            idnr = start_id+i
-            self.run('marker #'+str(idnr)+' position '+ \
-                str(p[0])+','+str(p[1])+','+str(p[2])+' color red radius 10')
+            model_id = model_id_start[0]+i
+            model_id_str = self.model_reg.convert_model_id_to_str(model_id)
+
+            self.run('marker #'+model_id_str+' position '+ \
+                str(p[0])+','+str(p[1])+','+str(p[2])+ \
+                ' color '+color+' radius '+str(radius))
 
         return
+
+
+    def measure_transl_vec(self, model_id, ref_model_id):
+        ''' Measure translation vector. '''
+
+        model_id = self.model_reg.convert_model_id(model_id)
+        model_id_str = self.model_reg.convert_model_id_to_str(model_id)
+
+        ref_model_id = self.model_reg.convert_model_id(ref_model_id)
+        ref_model_id_str = self.model_reg.convert_model_id_to_str(ref_model_id)
+
+        re = self.run('measure rotation #'+model_id_str+ \
+                ' toModel #'+ref_model_id_str+' showAxis false')
+
+        transl_vec = self.get_transl_vec(re.description())
+
+        return transl_vec
+
+
+    def measure_rot_axis(self, model_id, ref_model_id):
+        ''' Measure rotation axis. '''
+
+        model_id = self.model_reg.convert_model_id(model_id)
+        model_id_str = self.model_reg.convert_model_id_to_str(model_id)
+
+        ref_model_id = self.model_reg.convert_model_id(ref_model_id)
+        ref_model_id_str = self.model_reg.convert_model_id_to_str(ref_model_id)
+
+        re = self.run('measure rotation #'+model_id_str+ \
+                ' toModel #'+ref_model_id_str+' showAxis false')
+
+        rot_axis = self.get_rot_axis(re.description())
+
+        return rot_axis
+
+
+    def get_transl_vec(self, txt):
+        ''' Get translation vector from ChimeraX text description. '''
+
+        vec = [0, 0, 0]
+        txt = txt.split("\n")
+
+        vec[0] = txt[1].strip()
+        vec[1] = txt[2].strip()
+        vec[2] = txt[3].strip()
+
+        # replace multiple spaces by a single space
+        vec = [re.sub(r'\s{2,}', ' ', v) for v in vec]
+
+        vec = [v.split(' ')[3] for v in vec]
+        vec = [float(v) for v in vec]
+
+        return vec
+
+
+    def get_rot_axis(self, txt):
+        ''' Get rotation axis from ChimeraX text description. '''
+
+        vec = [0,0,0]
+        txt = txt.split("\n")
+        v0 = txt[4].strip()
+
+        # replace multiple spaces by a single space
+        v0 = re.sub(r'\s{2,}', ' ', v0)
+        
+        v0 = v0.split(' ')
+
+        vec = [v0[1], v0[2], v0[3]]
+        vec = [float(v) for v in vec]
+
+        return vec
 
 
 def get_transl_vec(txt):

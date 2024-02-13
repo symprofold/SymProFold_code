@@ -40,12 +40,11 @@ class Axis():
 
         self.domains = [ [1,10000] ]
                 # 10000 to cover all common protein lengths
-        self.hide = []
         self.surface = None
         self.surface_resids = []
         self.passive_resids = []
 
-        self.chimerax_session = ''
+        self.chimerax_session = None
         self.preferred_bs = 0
         self.alignment_pivot_res = []
 
@@ -157,12 +156,6 @@ class Axis():
     def set_domains(self, domains):
         ''' Set domain ranges. '''
         self.domains = domains
-        return
-
-
-    def set_hide(self, hide):
-        ''' Set hide parameter. '''
-        self.hide = hide
         return
 
 
@@ -329,7 +322,7 @@ class Axis():
         opened_model_id = self.chimerax_session.open_model( \
                                                     self.model_active_path)
 
-        self.chimerax_session.run('cofr 0,0,0 showPivot 10,0.3')    
+        self.chimerax_session.reset_center_of_rotation()    
 
 
         if self.conf.export_ax_predictions == True:
@@ -379,18 +372,14 @@ class Axis():
 
               
         if self.conf.performance == False:
-            self.chimerax_session.run('hide #'+str(opened_model_id[0])+ \
-                                      ' atoms')
-            self.chimerax_session.run('show #'+str(opened_model_id[0])+ \
-                                      ' cartoons')
+            self.chimerax_session.hide_atoms(opened_model_id)
+            self.chimerax_session.show_cartoons(opened_model_id)
         elif self.conf.performance == True:
-            self.chimerax_session.run('hide #'+str(opened_model_id[0])+ \
-                                      ' atoms')
-            self.chimerax_session.run('hide #'+str(opened_model_id[0])+ \
-                                      ' cartoons')
+            self.chimerax_session.hide_atoms(opened_model_id)
+            self.chimerax_session.hide_cartoons(opened_model_id)
 
         if split:
-            self.chimerax_session.run('split #'+str(opened_model_id[0]))
+            self.chimerax_session.split_model(opened_model_id)
 
 
         rmsds = bibpdb.get_rmsds(self.model_active_path)

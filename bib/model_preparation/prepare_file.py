@@ -40,8 +40,7 @@ def prepare_file(f0, seq, path_export, sess, verbous=False, iteration=0):
     model_preparation.pdb.align_to_fasta(f, path_export+filename, seq, sess)
     f = path_export+filename
 
-    sess.run('close session')
-    sess.run('set bgColor white')
+    sess.init(graphics=False, reset_center_of_rotation=False)
 
     current_model_id = 0
     meta = {} 
@@ -112,18 +111,17 @@ def prepare_file(f0, seq, path_export, sess, verbous=False, iteration=0):
     # alignment of whole model to xy plane
     # ------------------------------------
     bib.model_to_plane(meta, current_model_id, sess)
-    sess.run('save "'+f+'" #'+str(current_model_id))
+    sess.save_model_id(current_model_id, f)
 
     coord = bibpdb.open_pdb(f, False)
     cen = geometry.get_center(coord, 'all', meta[current_model_id][1])
 
-    sess.run('move x '+str((-1)*cen[0])+' models #'+str(current_model_id))
-    sess.run('move y '+str((-1)*cen[1])+' models #'+str(current_model_id))
-    sess.run('save "'+f+'" #'+str(current_model_id))
+    sess.move_model(current_model_id, [(-1)*cen[0], (-1)*cen[1], 0])
+    sess.save_model_id(current_model_id, f)
 
     if cen[2] > 0:
-        sess.run('turn x 180 models #'+str(current_model_id))
-        sess.run('save "'+f+'" #'+str(current_model_id)+' ')
+        sess.turn_model(current_model_id, 0, 180)
+        sess.save_model_id(current_model_id, f)
 
         current_model_id, meta = bib.open_model( \
                 sess, f, current_model_id, meta, 1, \
@@ -131,13 +129,10 @@ def prepare_file(f0, seq, path_export, sess, verbous=False, iteration=0):
          
         coord = bibpdb.open_pdb(f, False)
         cen = geometry.get_center(coord, 'all', meta[current_model_id][1])
-        sess.run('move x '+str((-1)*cen[0])+' models #'+str(current_model_id))
-        sess.run('move y '+str((-1)*cen[1])+' models #'+str(current_model_id))
-        sess.run('save "'+f+'" #'+str(current_model_id)+' ')  
+        sess.move_model(current_model_id, [(-1)*cen[0], (-1)*cen[1], 0])
+        sess.save_model_id(current_model_id, f)
 
-    sess.run('marker #110 position '+ \
-             str(cen[0])+','+str(cen[1])+','+str(cen[2])+ \
-             ' color yellow radius 1')
+    sess.set_marker([cen], (110,), color='yellow', radius=1)
 
 
     # counterclockwise renaming of chain ids
@@ -353,11 +348,12 @@ def prepare_file(f0, seq, path_export, sess, verbous=False, iteration=0):
                                         sess, f, \
                                         current_model_id, meta, \
                                         termini_with_signalsequence=False)
-        sess.run('move x '+str((-1)*rot_axes_point_average[0])+ \
-                 ' models  #'+str(current_model_id))
-        sess.run('move y '+str((-1)*rot_axes_point_average[1])+ \
-                 ' models  #'+str(current_model_id))  
-        sess.run('save "'+f+'" #'+str(current_model_id)+' ')  
+        sess.move_model(current_model_id, \
+                        [(-1)*rot_axes_point_average[0], \
+                         (-1)*rot_axes_point_average[1], \
+                         0])
+
+        sess.save_model_id(current_model_id, f)
         bibpdb.clean_pdb(f)
 
         if mol_count >= 2:

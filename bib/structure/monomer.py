@@ -74,7 +74,7 @@ class Monomer(Model):
         return surface
 
 
-    def get_center(res_range, sess):
+    def get_center(self, res_range, sess):
         ''' Get center of monomer model. '''
 
         center = [0,0,0]

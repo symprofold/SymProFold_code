@@ -20,8 +20,8 @@ def open_model(sess, file, model_id, meta={}, part=0, \
         sess.open_model(file)
         model_id = sess.last_id()
     if part == 0 or part == 2:
-        sess.run('hide #'+str(model_id)+' atoms')
-        sess.run('show #'+str(model_id)+' cartoons')
+        sess.hide_atoms(model_id)
+        sess.show_cartoons(model_id)
         sess.split_model(model_id)
     if part == 0 or part == 1:
         rmsds = bibpdb.get_rmsds(file)
@@ -34,17 +34,6 @@ def open_model(sess, file, model_id, meta={}, part=0, \
         meta[model_id] = [[], termini, multimer_n, [[], []]]
       
     return model_id, meta
-
-
-def format_model(model_id, ax):
-    '''
-    Perform formatting operations on model.
-    '''
-    for h in ax.hide:
-        ax.chimerax_session.run(session,
-                'hide #'+str(model_id)+':'+str(h[0])+'-'+str(h[1])+' cartoons')
-
-    return
 
 
 def get_multimer_n(file):
@@ -72,9 +61,9 @@ def get_multimer_n(file):
 def place_plane(session):
     ''' Place 3 orientation points to allow identification of xy plane. '''
 
-    session.run('marker #100 position 0,0,0 color red radius 1')
-    session.run('marker #101 position 100,0,0 color red radius 1')
-    session.run('marker #102 position 0,100,0 color red radius 1')
+    session.set_marker([[0, 0, 0]], (100,), radius=1)
+    session.set_marker([[100, 0, 0]], (101,), radius=1)
+    session.set_marker([[0, 100, 0]], (102,), radius=1)
 
     return
 
@@ -94,20 +83,19 @@ def model_2fold_to_plane(model_id, meta, session):
     tmp_model = Model(session.model_reg)
     tmp_model.set_id(tmp_model_id)
     session.split_model(tmp_model.id)
-    session.run('match #'+tmp_model.idstr+'.2 to #'+tmp_model.idstr+'.1')
-    re = session.run('measure rotation #'+tmp_model.idstr+'.2 toModel #'+ \
-                     tmp_model.idstr+'.1'+' showAxis false')
-    rot_axis = chimerax_api.get_rot_axis(re.description())
+    session.match((tmp_model.id[0], 2), [], (tmp_model.id[0], 1))
+
+    rot_axis = session.measure_rot_axis((tmp_model.id[0], 2), \
+                                        (tmp_model.id[0], 1))
     session.close_id(tmp_model.id)
 
     ctl.d(rot_axis)
 
     center_res = round((meta[model_id][1][0]+ \
                         meta[model_id][1][1])/2)
-    center0 = session.get_coord_using_getcrd_command(
-                    '#'+model.idstr+'/A:'+str(center_res)+'@CA')
-    center1 = session.get_coord_using_getcrd_command(
-                    '#'+model.idstr+'/B:'+str(center_res)+'@CA')
+
+    center0 = session.get_xyz(model.id, center_res, chainid='A')
+    center1 = session.get_xyz(model.id, center_res, chainid='B')
 
     c0c1 = [center1[0]-center0[0], center1[1]-center0[1], \
             center1[2]-center0[2]]

@@ -43,7 +43,6 @@ def complete_outer_chains(assembler, layer, contact_submodel_orientation):
                             int(matchto.split('.')[1]), ax1.fold)
 
         last_model = ax1.open_model(False)
-        bib.format_model(last_model.id, ax1)
 
         assembler.ax_a_model_add_ax_b(ax0, ax1, \
                                       matchto,
@@ -117,7 +116,6 @@ def complete_outer_chains(assembler, layer, contact_submodel_orientation):
                                 contact_submodel_orientation, ax1.fold)
 
         last_model = ax0.open_model(False)
-        bib.format_model(last_model.id, ax0)
 
         assembler.ax_a_model_add_ax_b(ax1, ax0, \
                                     matchto, \
