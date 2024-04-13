@@ -1,0 +1,3 @@
+[submodule "tools/domain_separator"]
+	path = tools/domain_separator
+	url = https://github.com/symprofold/Domain_Separator.git
