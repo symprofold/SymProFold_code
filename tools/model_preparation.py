@@ -26,12 +26,9 @@ from structure.modelreg import ModelReg
 # - determination of the symmetry of SymPlex candidate
 # ================================================================
 
-sess = chimerax_api.ChimeraxSession(session, 1)
+sess = chimerax_api.ChimeraxSession(session, 0)
 model_reg = ModelReg()
 sess.set_model_reg(model_reg)
-
-sess.run('close session')
-sess.run('set bgColor white')
 
 current_model_id = 0
 meta = {} 

@@ -170,6 +170,23 @@ class ChimeraxSession():
         return
 
 
+    def save_model_ids(self, model_ids, path, filetype='pdb'):
+        '''
+        Save given model ids.
+        '''
+        if model_ids == 'all':
+            model_ids_str = ''
+        else:
+            model_ids_str = 'models '+self.ids_str_from_model_ids(model_ids)
+
+        if filetype == 'pdb':
+            self.run('save "'+path+'" '+model_ids_str)
+        else:
+            self.run('save "'+path+'" '+model_ids_str)
+
+        return
+
+
     def get_xyz(self, model_id, resid, atomid='CA', \
                 error_when_res_not_found=True, chainid=''):
         '''
@@ -247,6 +264,35 @@ class ChimeraxSession():
 
         self.run('turn '+axis_str[axis]+' '+str(angle)+ \
                          center_str+' models #'+model_id_str)
+
+        return
+
+
+    def align_model(self, model_residues, ref_model_ids):
+        '''
+        Align residues of model to reference model ids.
+        '''
+        model_residues_str = []
+        for m in model_residues:
+            model_id = self.model_reg.convert_model_id(m[0])
+            model_id_str = self.model_reg.convert_model_id_to_str(model_id)
+
+            chainid_str = ''
+            if m[1] != '':
+                chainid_str = '/'+m[1]
+
+            model_residues_str.append('#'+model_id_str+chainid_str+ \
+                                                        ':'+str(m[2])+'@CA')
+
+        ref_model_ids_str = []
+        for r in ref_model_ids:
+            ref_model_id = self.model_reg.convert_model_id(r)
+            ref_model_id_str = \
+                        self.model_reg.convert_model_id_to_str(ref_model_id)
+            ref_model_ids_str.append(ref_model_id_str)
+
+        self.run('align '+' '.join(model_residues_str)+ \
+                        ' toAtoms #'+','.join(ref_model_ids_str))
 
         return
 
@@ -490,13 +536,44 @@ class ChimeraxSession():
         return
 
 
-    def hide_atoms(self, model_id):
+    def hide_models(self, model_ids):
+        '''
+        Hide model ids.
+        '''
+        if model_ids == 'all':
+            model_ids_str = ''
+        else:
+            model_ids_str = self.ids_str_from_model_ids(model_ids)
+
+        self.run('hide '+model_ids_str+' models')
+
+        return
+
+
+    def show_models(self, model_ids):
+        '''
+        Show model ids.
+        '''
+        if model_ids == 'all':
+            model_ids_str = ''
+        else:
+            model_ids_str = self.ids_str_from_model_ids(model_ids)
+
+        self.run('show '+model_ids_str+' models')
+
+        return
+
+
+    def hide_atoms(self, model_ids):
         '''
         Hide atoms of model id.
         '''
-        model_id_str = self.model_reg.convert_model_id_to_str(model_id)
+        if model_ids == 'all':
+            model_ids_str = ''
+        else:
+            model_ids_str = self.ids_str_from_model_ids(model_ids)
 
-        self.run('hide #'+model_id_str+' atoms')
+        self.run('hide '+model_ids_str+' atoms')
 
         return
 
@@ -735,6 +812,35 @@ class ChimeraxSession():
         return ids_str_
 
 
+    def ids_str_from_model_ids(self, model_ids):
+        '''
+        Create ChimeraX string of model ids from given list of model ids.
+        '''
+        ids_str_ = ''
+
+        for model_id in model_ids:
+            model_id = self.model_reg.convert_model_id(model_id)
+            model_id_str = self.model_reg.convert_model_id_to_str(model_id)
+
+            ids_str_ += ('#'+model_id_str+' ')
+
+        ids_str_ = ids_str_[:-1]
+
+        return ids_str_
+
+
+    def ids(self, model_objects):
+        '''
+        Create list of model ids from given list of model objects.
+        '''
+        ids = []
+
+        for m in model_objects:
+            ids.append(m.id)
+
+        return ids
+
+
     def combine_models(self, models, combined_model_id):
         '''
         Combine models to model_id_combined.
@@ -807,6 +913,19 @@ class ChimeraxSession():
         self.close_id(id_to_split)
 
         return
+
+
+    def clashes_nonhidden(self, model_id):
+        '''
+        Calculate clashes between model_id and all other non-hidden models.
+        '''
+        model_id = self.model_reg.convert_model_id(model_id)
+        model_id_str = self.model_reg.convert_model_id_to_str(model_id)
+
+        clashes = self.run('clashes #'+model_id_str+ \
+                            ' restrict cross ignoreHiddenModels true')
+
+        return clashes
 
 
     def set_marker(self, points, model_id_start, color='red', radius=10):

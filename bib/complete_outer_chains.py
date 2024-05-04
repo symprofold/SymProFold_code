@@ -13,7 +13,7 @@ def complete_outer_chains(assembler, layer, contact_submodel_orientation):
     ax1 = assembler.axes[1]
 
     layer_models = layer.get_representations().values()
-    layer_models_idstr = ax0.chimerax_session.ids_str(layer_models)
+    layer_models_ids = ax0.chimerax_session.ids(layer_models)
 
 
     ax0_incomplete_models = []
@@ -24,14 +24,14 @@ def complete_outer_chains(assembler, layer, contact_submodel_orientation):
             i = ax0.chimerax_session.model_reg. \
                 convert_model_id_to_str(i_id)
             
-            conn_ = r.get_connection(i, 'snapin')
+            conn_ = r.get_connection(i_id, 'snapin')
             if conn_ != False:
-                conn = conn_
+                pass
 
             # check if models already merged
             elif i_id not in ax0.chimerax_session. \
                     model_reg.get_model(i_id[0]).connected:
-                ax0_incomplete_models.append(i)
+                ax0_incomplete_models.append(i_id)
                 ctl.d('incomplete model ax0: '+i)                
                 ctl.d(ax0_incomplete_models)
 
@@ -40,14 +40,14 @@ def complete_outer_chains(assembler, layer, contact_submodel_orientation):
 
     for matchto in ax0_incomplete_models:
         contact_model21 = assembler.ax1_contact_submodel_0( \
-                            int(matchto.split('.')[1]), ax1.fold)
+                            matchto[1], ax1.fold)
 
         last_model = ax1.open_model(False)
 
         assembler.ax_a_model_add_ax_b(ax0, ax1, \
-                                      matchto,
-                                      last_model.idstr+'.'+ \
-                                      str(contact_model21), 'completechains', \
+                                      matchto, \
+                                      (last_model.id[0], contact_model21), \
+                                      'completechains', \
                                       False)
                 # param "False", because connection not permanent/universal
 
@@ -59,22 +59,20 @@ def complete_outer_chains(assembler, layer, contact_submodel_orientation):
                
 
         # show only models assigned to layer
-        ax0.chimerax_session.run('hide '+' models')
-        ax0.chimerax_session.run('show '+layer_models_idstr+' models')
+        ax0.chimerax_session.hide_models('all')
+        ax0.chimerax_session.show_models(layer_models_ids)
 
         # hide matchto model and show last_model
-        ax0.chimerax_session.run('hide #'+str(matchto)+' models')
-        ax0.chimerax_session.run('show #'+ \
-                        last_model.idstr+'.'+str(contact_model21)+' models')
+        ax0.chimerax_session.hide_models([matchto])
+        ax0.chimerax_session.show_models([(last_model.id[0], contact_model21)])
 
         # calculate clashes
-        clashes = ax0.chimerax_session.run('clashes #'+ \
-                            last_model.idstr+'.'+str(contact_model21)+ \
-                            ' restrict cross ignoreHiddenModels true'+'')
+        clashes = ax0.chimerax_session.clashes_nonhidden( \
+                                        (last_model.id[0], contact_model21))
         ax0.chimerax_session.close_id(last_model.id[0]+1)
 
-        ax0.chimerax_session.run('show '+' models')
-        ax0.chimerax_session.run('hide '+' atoms')
+        ax0.chimerax_session.show_models('all')
+        ax0.chimerax_session.hide_atoms('all')
 
 
         if len(clashes) > max_clashes:
@@ -92,15 +90,15 @@ def complete_outer_chains(assembler, layer, contact_submodel_orientation):
             i = ax0.chimerax_session.model_reg. \
                 convert_model_id_to_str(i_id)
 
-            conn_ = r.get_connection(i, 'snapin')
+            conn_ = r.get_connection(i_id, 'snapin')
             if conn_ != False:
-                conn = conn_
+                pass
 
             # check if models already merged
             elif i_id not in ax0.chimerax_session. \
                      model_reg.get_model(i_id[0]).connected:
                 ctl.d(i_id)
-                ax1_incomplete_models.append(i)
+                ax1_incomplete_models.append(i_id)
                 ctl.d('incomplete model ax1: '+i)  
 
 
@@ -112,16 +110,16 @@ def complete_outer_chains(assembler, layer, contact_submodel_orientation):
 
     for matchto in ax1_incomplete_models:
         contact_model12 = assembler.ax1_contact_submodel_1(
-                                int(matchto.split('.')[1]), \
+                                matchto[1], \
                                 contact_submodel_orientation, ax1.fold)
 
         last_model = ax0.open_model(False)
 
         assembler.ax_a_model_add_ax_b(ax1, ax0, \
-                                    matchto, \
-                                    last_model.idstr+'.'+ \
-                                    str(contact_model12), 'completechains', \
-                                    False)
+                                      matchto, \
+                                      (last_model.id[0], contact_model12), \
+                                      'completechains', \
+                                      False)
                 # param "False", because connection not permanent/universal
 
         for i in range(1, ax1.fold+1):
@@ -130,22 +128,20 @@ def complete_outer_chains(assembler, layer, contact_submodel_orientation):
            
 
         # show only models assigned to layer
-        ax0.chimerax_session.run('hide '+' models')
-        ax0.chimerax_session.run('show '+layer_models_idstr+' models')
+        ax0.chimerax_session.hide_models('all')
+        ax0.chimerax_session.show_models(layer_models_ids)
 
         # hide matchto model and show last_model
-        ax0.chimerax_session.run('hide #'+str(matchto)+' models')
-        ax0.chimerax_session.run('show #'+ \
-                        last_model.idstr+'.'+str(contact_model12)+' models')
+        ax0.chimerax_session.hide_models([matchto])
+        ax0.chimerax_session.show_models([(last_model.id[0], contact_model12)])
 
         # calculate clashes
-        clashes = ax0.chimerax_session.run('clashes #'+ \
-                            last_model.idstr+'.'+str(contact_model12)+ \
-                            ' restrict cross ignoreHiddenModels true'+'')
+        clashes = ax0.chimerax_session.clashes_nonhidden( \
+                                        (last_model.id[0], contact_model12))
         ax0.chimerax_session.close_id(last_model.id[0]+1)
 
-        ax0.chimerax_session.run('show '+' models')
-        ax0.chimerax_session.run('hide '+' atoms')
+        ax0.chimerax_session.show_models('all')
+        ax0.chimerax_session.hide_atoms('all')
 
 
         if len(clashes) > max_clashes:
@@ -153,7 +149,7 @@ def complete_outer_chains(assembler, layer, contact_submodel_orientation):
             ax0.chimerax_session.close_id((last_model.id[0], contact_model12))
             ctl.d('complete_outer_chains: close due to clashes, pos 2')
 
-    ax0.chimerax_session.run('save "'+ \
-                             assembler.conf.layer_complete_chains_raw_path+'"')
+    ax0.chimerax_session.save_models('all', \
+                                assembler.conf.layer_complete_chains_raw_path)
 
     return

@@ -67,17 +67,17 @@ class RotSymmAxes():
         number = 0
 
         for ax in self.axes:
-            id_str = ''
+            model_ids = []
 
             for chain_id in ax[1]:
-                id_str += '#'+str(current_model_id)+'.'+str(chain_id+1)+' '
+                model_ids.append((current_model_id, chain_id+1))
 
             number = max(self.get_infix_file_num_next()+1, 20)
             filename_parts = self.filename.split('rank')
             filename_ = filename_parts[0]+'rank'+('00'+str(number))[-2:]+ \
                         filename_parts[1][2:]
 
-            sess.run('save "'+self.path_export+filename_+'" '+id_str+' ')
+            sess.save_model_ids(model_ids, self.path_export+filename_, 'pdb')
             bibpdb.clean_pdb(self.path_export+filename_)
             files_written.append(self.path_export+filename_)
 

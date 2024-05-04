@@ -372,10 +372,10 @@ class Axis():
 
               
         if self.conf.performance == False:
-            self.chimerax_session.hide_atoms(opened_model_id)
+            self.chimerax_session.hide_atoms([opened_model_id])
             self.chimerax_session.show_cartoons(opened_model_id)
         elif self.conf.performance == True:
-            self.chimerax_session.hide_atoms(opened_model_id)
+            self.chimerax_session.hide_atoms([opened_model_id])
             self.chimerax_session.hide_cartoons(opened_model_id)
 
         if split:

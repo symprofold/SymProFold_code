@@ -20,7 +20,7 @@ def open_model(sess, file, model_id, meta={}, part=0, \
         sess.open_model(file)
         model_id = sess.last_id()
     if part == 0 or part == 2:
-        sess.hide_atoms(model_id)
+        sess.hide_atoms([model_id])
         sess.show_cartoons(model_id)
         sess.split_model(model_id)
     if part == 0 or part == 1:
@@ -110,24 +110,19 @@ def model_2fold_to_plane(model_id, meta, session):
     marker_id = session.open_model(main_dir+'/component_files/marker.pdb')
     marker = Model(session.model_reg)
     marker.set_id(marker_id)
+    marker.set_session(session)
 
-    session.run('move x '+str(center0[0]+normal[0])+ \
-                ' models #'+marker.idstr)
-    session.run('move y '+str(center0[1]+normal[1])+ \
-                ' models #'+marker.idstr)
-    session.run('move z '+str(center0[2]+normal[2])+ \
-                ' models #'+marker.idstr)    
+    marker.move_model([center0[0]+normal[0], \
+                       center0[1]+normal[1], \
+                       center0[2]+normal[2]])
 
     session.combine_models([model, marker], str(marker.id[0]+1))
-    session.run('marker #201 position '+str(normal[0])+','+ \
-                str(normal[1])+','+str(normal[2])+' color yellow radius 1')
+    session.set_marker([normal], (201,), color='yellow', radius=1)
 
-    cmd_align = 'align #'+str(marker.id[0]+1)+'/A:'+str(center_res)+'@CA '+ \
-                 '#'+str(marker.id[0]+1)+'/B:'+str(center_res)+'@CA '+ \
-                 '#'+str(marker.id[0]+1)+'/C:1@CA '+ \
-                 'toAtoms #100,101,102'
-    ctl.d(cmd_align)
-    session.run(cmd_align)
+    session.align_model([((marker.id[0]+1,), 'A', center_res), \
+                         ((marker.id[0]+1,), 'B', center_res), \
+                         ((marker.id[0]+1,), 'C', 1)], \
+                        [(100,), (101,), (102,)])
 
     session.close_id(tmp_model.id)
 
@@ -154,12 +149,10 @@ def model_to_plane(meta, model_id, session):
         model_2fold_to_plane(model_id, meta, session)
 
     if meta[model_id][2] >= 3:
-        cmd_align = 'align #'+str(model_id)+'/A:'+str(center_res)+'@CA '+ \
-                          '#'+str(model_id)+'/B:'+str(center_res)+'@CA '+ \
-                          '#'+str(model_id)+'/C:'+str(center_res)+'@CA '+ \
-                          'toAtoms #100,101,102'
-
-        session.run(cmd_align)
+        session.align_model([(model_id, 'A', center_res), \
+                             (model_id, 'B', center_res), \
+                             (model_id, 'C', center_res)], \
+                            [(100,), (101,), (102,)])
 
     return
 
