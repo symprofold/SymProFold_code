@@ -1,4 +1,5 @@
 import ctl
+import control_utils
 import bibfasta
 import filesystem
 
@@ -11,18 +12,19 @@ class Config():
     This class represents the configuration.
     '''
 
-    def __init__(self):
+    def __init__(self, execution_file):
         ''' Initialization of the Config class. '''
 
         self.export_ax_predictions = True
-        self.version = 'v81'
+        self.version = 'v82'
 
         self.main_dir = filesystem.clean_path( \
                 os.path.dirname(os.path.realpath(__file__))+'/../')
+        self.execution_dir = os.path.dirname(execution_file)+'/'
 
         self.path_ax_predictions = filesystem.clean_path( \
                 os.path.dirname(os.path.realpath(__file__))+ \
-                '/../conf/dir_predictions/')
+                '/../preassemblies/')
 
         self.struct_coll_path = ''
         self.struct_coll_meta_path = ''
@@ -224,6 +226,9 @@ class Config():
         self.export_file_prefix = self.species+'_'+self.gene
         self.export_path_filters = [self.export_file_prefix]
 
+        preassemblies_dir = control_utils.get_preassemblies_dir( \
+                                                self, self.execution_dir)
+        self.set_preassemblies_dir(preassemblies_dir)
         self.update_export_paths()
 
         return
@@ -240,7 +245,8 @@ class Config():
     def import_domains(self):
         ''' Import domain boundaries from '_d.fa'-file. '''
 
-        path_fasta = self.path_ax_predictions+self.species+'/'+self.symplex_path
+        path_fasta = self.path_ax_predictions+ \
+                                 self.species+'/'+self.symplex_path
         fasta_file = sorted(glob.glob(path_fasta+self.gene+'_d.fa'))
 
         if len(fasta_file) != 1:
@@ -251,16 +257,27 @@ class Config():
         domains, domain_boundaries = bibfasta.get_domains(fasta_file[0])
         self.domains = domain_boundaries
 
-        f = open(self.get_struct_coll_meta_path()+ \
-                self.export_file_prefix+'_domain_boundaries.txt', 'w')
-        f.write(str(domain_boundaries)+"\r\n")  
-        f.close()
+        if os.path.exists(self.path_ax_predictions+self.species+'/'+ \
+                                        self.symplex_path+'setting_meta.txt'):
+            f = open(self.get_struct_coll_meta_path()+ \
+                    self.export_file_prefix+'_domain_boundaries.txt', 'w')
+            f.write(str(domain_boundaries)+"\r\n")  
+            f.close()
 
         return domain_boundaries
 
 
+    def set_preassemblies_dir(self, assemblies_dir):
+        ''' Set preassemblies directory. '''
+
+        self.path_ax_predictions = assemblies_dir
+        self.update_export_paths()
+
+        return
+
+
     def set_struct_coll_path(self, struct_coll_path, struct_coll_meta_path=''):
-        ''' Set path for output structures. '''
+        ''' Set assemblies directory (for output structures). '''
 
         self.struct_coll_path = struct_coll_path
         self.update_export_paths()
@@ -272,7 +289,7 @@ class Config():
 
 
     def get_struct_coll_path(self):
-        ''' Get path for output structures. '''
+        ''' Get assemblies directory. '''
 
         if self.struct_coll_path != '':
             path = self.struct_coll_path
@@ -294,7 +311,9 @@ class Config():
         else:
             path = self.get_struct_coll_path()[0:-1]+'_meta/'
 
-        filesystem.create_folder([path])
+        if os.path.exists(self.path_ax_predictions+self.species+'/'+ \
+                                        self.symplex_path+'setting_meta.txt'):
+            filesystem.create_folder([path])
 
         return path
 

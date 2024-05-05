@@ -1,6 +1,6 @@
 import os
 import sys
-sys.path.append(os.path.dirname(__file__)+'/../bib/')
+sys.path.append(os.path.dirname(__file__)+'/../lib/')
 
 import ctl
 import bib

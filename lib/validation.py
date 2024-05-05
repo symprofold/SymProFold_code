@@ -4,6 +4,7 @@ import export
 import filesystem
 
 import math
+import os
 
 
 def validation(model_id, model_id_restrict, axes, export_path, conf, sess):
@@ -26,7 +27,10 @@ def validation(model_id, model_id_restrict, axes, export_path, conf, sess):
     path_validation_file = conf.get_struct_coll_meta_path()+ \
                            conf.species+'_'+conf.species_name+'/'+ \
                            path_part2+'_'+conf.meta_file_prefix
-    filesystem.create_folder([path_validation_file])
+
+    if os.path.exists(conf.path_ax_predictions+conf.species+'/'+ \
+                                        conf.symplex_path+'setting_meta.txt'):
+        filesystem.create_folder([path_validation_file])
 
 
     # determination of clashes
@@ -97,37 +101,39 @@ def validation(model_id, model_id_restrict, axes, export_path, conf, sess):
     quality_score = clashes_per_residue+ax1_tilt_score
     overall = clashes_per_100residues+rmsd
 
-    f = open(path_validation_file+ \
-            'qual'+str(round(quality_score, 3))+ \
-            '_cl'+str(round(clashes_per_residue, 3))+ \
-            '_be'+str(round(ax1_tilt_score, 3))+ \
-             '.txt', 'w', encoding='utf-8')
-    f.write('clashes: '+str(clashes)+"\r\n")  
-    f.write('intermolecular clashes per 100 residues: '+ \
-            str(round(clashes_per_100residues, 2))+"\r\n")
-    f.write('number of residues: '+str(model_res_n)+"\r\n")  
+    if os.path.exists(conf.path_ax_predictions+conf.species+'/'+ \
+                                        conf.symplex_path+'setting_meta.txt'):
+        f = open(path_validation_file+ \
+                'qual'+str(round(quality_score, 3))+ \
+                '_cl'+str(round(clashes_per_residue, 3))+ \
+                '_be'+str(round(ax1_tilt_score, 3))+ \
+                 '.txt', 'w', encoding='utf-8')
+        f.write('clashes: '+str(clashes)+"\r\n")  
+        f.write('intermolecular clashes per 100 residues: '+ \
+                str(round(clashes_per_100residues, 2))+"\r\n")
+        f.write('number of residues: '+str(model_res_n)+"\r\n")  
 
-    if len(axes) > 1:
-        f.write("\r\n")  
-        f.write('score_clash (intermolecular clashes per residue): '+ \
-                        str(round(clashes_per_residue, 4))+"\r\n")
-        f.write('score_bend (layer bending, axis tilt): '+ \
-                        str(round(ax1_tilt_score, 3))+"\r\n")
-        f.write('individual values layer bending (axis tilt): '+ \
-                        ax1_tilt_delta_str+"\r\n")
-        f.write('quality score (score_clash+score_bend): '+ \
-                        str(round(quality_score, 3))+"\r\n")
-
-        if max(conf.flatten_modes) >= 0:
+        if len(axes) > 1:
             f.write("\r\n")  
-            f.write('score_bendz (layer bending, z deflection): '+ \
-                            str(round(rmsd, 1))+"\r\n")
-            f.write('individual values layer bending (z deflection): '+ \
-                            delta_str+"\r\n")
-            f.write('quality score (score_clash100+score_bendz): '+ \
-                            str(round(overall, 1))+"\r\n")  
+            f.write('score_clash (intermolecular clashes per residue): '+ \
+                            str(round(clashes_per_residue, 4))+"\r\n")
+            f.write('score_bend (layer bending, axis tilt): '+ \
+                            str(round(ax1_tilt_score, 3))+"\r\n")
+            f.write('individual values layer bending (axis tilt): '+ \
+                            ax1_tilt_delta_str+"\r\n")
+            f.write('quality score (score_clash+score_bend): '+ \
+                            str(round(quality_score, 3))+"\r\n")
 
-    f.close()
+            if max(conf.flatten_modes) >= 0:
+                f.write("\r\n")  
+                f.write('score_bendz (layer bending, z deflection): '+ \
+                                str(round(rmsd, 1))+"\r\n")
+                f.write('individual values layer bending (z deflection): '+ \
+                                delta_str+"\r\n")
+                f.write('quality score (score_clash100+score_bendz): '+ \
+                                str(round(overall, 1))+"\r\n")
+
+        f.close()
 
     return [clashes_per_100residues, \
             [quality_score, clashes_per_residue, ax1_tilt_score]]

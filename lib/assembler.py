@@ -11,6 +11,7 @@ import export
 import filesystem
 import geometry
 import math
+import os
 import structure.primitive_unit_cell
 import proteinmerge
 import snapin
@@ -592,10 +593,13 @@ class Assembler():
                         (ax1_models[ax0_model_i].id[0], dest_submodel_id), \
                         'flattened')
 
-            meta_path = self.conf.get_struct_coll_meta_path()
-            export_file_prefix = self.conf.export_file_prefix+ \
-                                 self.export_file_infix
-            self.export_meta(ax0, meta_path+export_file_prefix+'.txt')
+            if os.path.exists(self.conf.path_ax_predictions+ \
+                            self.conf.species+'/'+self.conf.symplex_path+ \
+                            'setting_meta.txt'):
+                meta_path = self.conf.get_struct_coll_meta_path()
+                export_file_prefix = self.conf.export_file_prefix+ \
+                                     self.export_file_infix
+                self.export_meta(ax0, meta_path+export_file_prefix+'.txt')
 
         sess.format_session()
         sess.save_models('all', self.conf.layer_raw_path)
@@ -691,7 +695,9 @@ class Assembler():
                                     lc_offset_infix, \
                                     lc_offset=self.lc_offset)
 
-        self.export_meta(ax0, \
+        if os.path.exists(self.conf.path_ax_predictions+ \
+            self.conf.species+'/'+self.conf.symplex_path+'setting_meta.txt'):
+            self.export_meta(ax0, \
                          meta_path+export_file_prefix+lc_offset_infix+'.txt')
 
 

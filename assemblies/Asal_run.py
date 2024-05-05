@@ -1,6 +1,12 @@
 import os
 import sys
-sys.path.append(os.path.dirname(__file__)+'/../bib/')
+
+sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+
+import lib
+
+# import SymProFold libraries
+sys.path.append(lib.get_main_dir()+'lib/')
 
 import symplex_comb
 
@@ -11,7 +17,7 @@ import chimerax_api
 from config import Config
 
 
-conf = Config()
+conf = Config(os.path.realpath(__file__))
 try:
     conf.set_run_level(run_level)
 except NameError:
@@ -20,29 +26,27 @@ except NameError:
 sess = chimerax_api.ChimeraxSession(session)
 
 
-#options for runlevel 0
-conf.set_flatten_modes([0,1], 0)
+# options for runlevel 0
 conf.set_flatten_modes([0,1,2,4,5], 0)
         # 0: pure superposition, 1: flattened, 2: snapin/tile,
         # 3:completed chains, 4:primitive_unit_cell,
         # 5: assembly of 3x3 primitive unit cells
-conf.set_delete_termini_modes([0,1], 0)
+conf.set_delete_termini_modes([1], 0)
 
 
-conf.set_species('Mvan', 'Methanococcus vannielii')
-conf.set_gene('A6URZ5')
+conf.set_species('Asal', 'Aeromonas salmonicida')
+conf.set_gene('P35823')
 conf.import_domains()
 
-
-symplex0_folder = 'A6URZ5_12x6/'
+symplex0_folder = 'af23/P35823_12x4/'
 model_status0 = 2 # set oriented path
 
-symplex1_folder = 'A6URZ5_x2/'
+symplex1_folder = 'af23/P35823_23x4/'
 model_status1 = 2 # set oriented path
 
 alignment_domain = 2
-alignment_pivot_pos = [0, 1][0]
-insertion_length = [-1, 1][1]
+alignment_pivot_pos = [0, 1][1]
+insertion_length = [-1, 1][0]
 
 
 symplex0_domains = symplex_comb.domains(symplex0_folder, conf)
@@ -74,7 +78,7 @@ for conformation in  conf.conformations:
     ax[1].set_surface(surface_section1) 
 
     # ax[0].set_model_active(0)
-    ax[1].set_model_active(4)
+    # ax[1].set_model_active(0)
 
     assembler = Assembler(ax, conf)
     assembler.run()

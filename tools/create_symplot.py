@@ -4,7 +4,7 @@ import sys
 
 # path to main directory 'SymProFold/' of SymProFold installation
 if os.path.exists(os.path.dirname(os.path.realpath(__file__))+ \
-                      '/../runscripts/'):
+                      '/../component_files/'):
     path_symprofold = os.path.dirname(os.path.realpath(__file__))+ \
                           '/../'
 else:
@@ -20,7 +20,7 @@ if not os.path.exists(path_symprofold):
           'installation not found')
     sys.exit()
 
-sys.path.append(path_symprofold+'bib/')
+sys.path.append(path_symprofold+'lib/')
 
 
 import ctl

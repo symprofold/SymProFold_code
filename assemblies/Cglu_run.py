@@ -1,6 +1,12 @@
 import os
 import sys
-sys.path.append(os.path.dirname(__file__)+'/../bib/')
+
+sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+
+import lib
+
+# import SymProFold libraries
+sys.path.append(lib.get_main_dir()+'lib/')
 
 import symplex_comb
 
@@ -11,7 +17,7 @@ import chimerax_api
 from config import Config
 
 
-conf = Config()
+conf = Config(os.path.realpath(__file__))
 try:
     conf.set_run_level(run_level)
 except NameError:
@@ -20,7 +26,7 @@ except NameError:
 sess = chimerax_api.ChimeraxSession(session)
 
 
-# options for runlevel 0
+#options for runlevel 0
 conf.set_delete_termini_modes([1], 0)
 conf.set_flatten_modes([0], 0) # not used for Cglu
         # 0: pure superposition, 1: flattened, 2: snapin/tile,
@@ -29,22 +35,21 @@ conf.set_flatten_modes([0], 0) # not used for Cglu
 conf.set_filters_for_export([0,1,2], 0)
 conf.set_snapshot_modes([0], 0)   # snapshot_w_separated_chains
 
-# options for runlevel 5
+#options for runlevel 5
 conf.set_flatten_modes([0], 5) # not used for Cglu
 conf.set_filters_for_export([0,1,2], 5)
 conf.set_snapshot_modes([0], 5)   # snapshot_w_separated_chains
 
 
-conf.set_species('Cglu', 'Corynebacterium glutamicum primary_gene')
-conf.set_gene('Q2VRQ3')
-conf.set_symplex_path('af23/')
+conf.set_species('Cglu', 'Corynebacterium glutamicum')
+conf.set_gene('Q6QUS5')
 conf.import_domains()
 
 
-symplex0_folder = conf.symplex_path+'Q2VRQ3_x6_o/symm_060/'
-model_status0 = 0 # set oriented path
+symplex0_folder = 'Q6QUS5_x6_superposed/'
+model_status0 = 1 # set oriented path
 
-symplex1_folder = conf.symplex_path+'Q2VRQ3_x3_or/symm_120/'
+symplex1_folder = 'Q6QUS5_x3_o/symm_120/'
 model_status1 = 0 # set oriented path
 
 
@@ -60,7 +65,7 @@ for conformation in  conf.conformations:
     ax[1].set_session(sess, conf)
     ax[1].set_folder(symplex1_folder, model_status1)
 
-    ax[0].set_model_active(2)
+    # ax[0].set_model_active(0)
     # ax[1].set_model_active(0)
 
     assembler = Assembler(ax, conf)
