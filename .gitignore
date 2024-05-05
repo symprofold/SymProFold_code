@@ -10,5 +10,6 @@
 !*.fa
 !*.pdb
 !*.txt
+!rename_*
 
 .*
