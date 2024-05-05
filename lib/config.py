@@ -16,7 +16,7 @@ class Config():
         ''' Initialization of the Config class. '''
 
         self.export_ax_predictions = True
-        self.version = 'v82'
+        self.version = 'v83'
 
         self.main_dir = filesystem.clean_path( \
                 os.path.dirname(os.path.realpath(__file__))+'/../')
@@ -294,9 +294,13 @@ class Config():
         if self.struct_coll_path != '':
             path = self.struct_coll_path
         else:
-            path = os.path.dirname(os.path.realpath(__file__))+ \
-                   '/../../Structures_'+self.version+'/'
-            path = filesystem.clean_path(path)
+            if os.path.exists( \
+                self.execution_dir+'setting_dir_superordinate.txt'):
+                path = os.path.dirname(os.path.realpath(__file__))+ \
+                       '/../../Structures_'+self.version+'/'
+                path = filesystem.clean_path(path)
+            else:
+                path = self.execution_dir
 
         filesystem.create_folder([path])
 

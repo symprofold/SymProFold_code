@@ -253,7 +253,7 @@ class Assemblies():
                 files0 = sorted(glob.glob(path+'*_d.fa'))
                 gene_id = files0[0].split('/')[-1].split('_d.fa')[0]
                 
-                s =  [spec_shortname, gene_id, 'p?', \
+                s =  [spec_shortname, gene_id, '', \
                      path, 0, 0, [0], [5], [], 1]
                 assemblies.append({})
 
