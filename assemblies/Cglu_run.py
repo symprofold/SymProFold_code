@@ -43,6 +43,7 @@ conf.set_snapshot_modes([0], 5)   # snapshot_w_separated_chains
 
 conf.set_species('Cglu', 'Corynebacterium glutamicum')
 conf.set_gene('Q6QUS5')
+conf.set_symplex_path('Q6QUS5/')
 conf.import_domains()
 
 

@@ -2,6 +2,7 @@ import ctl
 import metadata
 
 import glob
+import os
 
 
 '''
@@ -24,7 +25,9 @@ def symplex_comb(ax):
                 comb.append((i, j))
             else:
                 ctl.p('not possible:')
+                ctl.p(f0)
                 ctl.p(files0)
+                ctl.p(f1)
                 ctl.p(files1)
 
     return comb
@@ -175,8 +178,11 @@ def subchain_order(symplex0_folder, symplex1_folder, insertion_length, conf):
 def insertion_lengths(sc0, sc1):
     '''
     Determine insertion lengths compatible with combination of given subchains.
+
+    Returns:
+        [int]: list of numbers of domains
     '''
-    insertion_lengths_ = [-1]
+    insertion_lengths_ = [-1] # -1: all available domains
 
     if sc0 == 'FL' or sc1 == 'FL':
         insertion_lengths_.append(1)
@@ -272,6 +278,76 @@ def symplex_folders(symplex0_predscen, symplex1_predscen, \
                                     symplex1_predscen.replace('FL', '')+'/'
 
     return symplex0_folder, symplex1_folder
+
+
+def assembly_dir_rename(assembler, assembly_return, ax, \
+                        symplex_combination, \
+                        insertion_length, \
+                        alignment_domain, alignment_pivot_pos, \
+                        conf):
+    '''
+    Rename assembly directory and include metadata in new directory name.
+    '''
+    result_infixes = { 2: 'axistilt', \
+                       3: 'gap', \
+                       4: 'notperpendicular', \
+                       5: 'snapindist', \
+                       6: 'rotsymmaxnotdetermined', \
+                       7: 'rotsymmaxinverted', \
+                       8: 'snapinrot', \
+                       9: 'nosymmgroup', \
+                      10: 'snapinrotstep', \
+                      11: 'withintermini', \
+                      12: 'nocoincidentres' }
+
+    #  1:assembly possible
+    #  2:assembly not possible because tilt >45°
+    #  3:assembly not possible because snapin distance too large
+    #  4:assembly not possible because rotational symmetry axis
+    #    not perpendicular to xy plane
+    #  6:assembly not possible because determination of
+    #    rotational symmetry axis not successful
+    #  7:assembly not possible because z component of
+    #    rotational symmetry axis <=0
+    #  8:assembly not possible because snapin rotation too large
+    #  9:assembly not possible because no symmetry group determined
+    # 10:assembly not possible because snapin rotation step too large
+    # 11:assembly not possible because ax surface completely within termini
+    # 12:assembly not possible because no coincident residues
+
+    path_combination_part1 = '/'.join(conf.export_path.split('/')[:-2])+'/'
+
+    if assembly_return == 1: # assembly possible
+        validation_scores = \
+                    assembler.layers[1].primitive_unit_cell.validation_scores
+
+        os.rename(conf.export_path, path_combination_part1+ \
+            str(ax[0].fold)+str(ax[1].fold)+'_'+ \
+            str(metadata.get_subchain_abbr(ax[0].pathRaw))+'-'+ \
+                    str(metadata.get_subchain_abbr(ax[1].pathRaw))+'_'+ \
+            str(round(validation_scores[0], 3))+'_'+ \
+            str(round(validation_scores[1], 3))+'_'+ \
+            str(round(validation_scores[2], 3))+'_'+ \
+            'd'+str(alignment_domain)+'_'+ \
+            str(2*(insertion_length+1)+alignment_pivot_pos)+'_'+ \
+            str(symplex_combination[0])+str(symplex_combination[1]))
+
+    elif assembly_return in result_infixes: # assembly not possible
+        os.rename(conf.export_path, path_combination_part1+ \
+            str(ax[0].fold)+str(ax[1].fold)+'_'+ \
+            str(metadata.get_subchain_abbr(ax[0].pathRaw))+'-'+ \
+                    str(metadata.get_subchain_abbr(ax[1].pathRaw))+ \
+                '_'+ \
+            result_infixes[assembly_return]+'_'+ \
+            'd'+str(alignment_domain)+'_'+ \
+            str(2*(insertion_length+1)+alignment_pivot_pos)+'_'+ \
+            str(symplex_combination[0])+str(symplex_combination[1]))
+
+    else:
+        ctl.e(assembly_return)
+        ctl.error('unknown result type')
+
+    return
 
 
 def check_processed(comb_fn_str):

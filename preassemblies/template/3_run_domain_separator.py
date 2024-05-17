@@ -79,13 +79,20 @@ monomer_files_relaxed = sorted(glob.glob(work_dir+ \
                                         '*_x1/*_x1/rank00_0.*.pdb'))
 monomer_files_unrelaxed = sorted(glob.glob(work_dir+ \
                                         '*_x1/unrelaxed_rank00_0.*.pdb'))
-
+monomer_files_ranked_relaxed = sorted(glob.glob(work_dir+ \
+                                        '*_x1/*_x1/ranked_0.pdb'))
+monomer_files_ranked_unrelaxed = sorted(glob.glob(work_dir+ \
+                                        '*_x1/ranked_0.pdb'))
 monomer_file = None
 
 if len(monomer_files_relaxed) >= 1:
     monomer_file = monomer_files_relaxed[0]
 elif len(monomer_files_unrelaxed) >= 1:
     monomer_file = monomer_files_unrelaxed[0]
+elif len(monomer_files_ranked_relaxed) >= 1:
+    monomer_file = monomer_files_ranked_relaxed[0]
+elif len(monomer_files_ranked_unrelaxed) >= 1:
+    monomer_file = monomer_files_ranked_unrelaxed[0]
 else:
     print('ERROR: no top-ranked model found')
     sys.exit()

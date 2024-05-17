@@ -36,12 +36,14 @@ conf.set_delete_termini_modes([1], 0)
 
 conf.set_species('Asal', 'Aeromonas salmonicida')
 conf.set_gene('P35823')
+conf.set_symplex_path('P35823/')
 conf.import_domains()
 
-symplex0_folder = 'af23/P35823_12x4/'
+
+symplex0_folder = conf.symplex_path+'P35823_12x4/'
 model_status0 = 2 # set oriented path
 
-symplex1_folder = 'af23/P35823_23x4/'
+symplex1_folder = conf.symplex_path+'P35823_23x4/'
 model_status1 = 2 # set oriented path
 
 alignment_domain = 2

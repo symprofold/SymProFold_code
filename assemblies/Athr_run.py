@@ -36,12 +36,14 @@ conf.set_delete_termini_modes([1], 0)
 
 conf.set_species('Athr', 'Aneurinibacillus thermoaerophilus')
 conf.set_gene('Q6TL21')
+conf.set_symplex_path('Q6TL21/')
 conf.import_domains()
 
-symplex0_folder = 'af23/Q6TL21_13x4/'
+
+symplex0_folder = conf.symplex_path+'Q6TL21_13x4/'
 model_status0 = 1 # set oriented path
 
-symplex1_folder = 'af23/Q6TL21_24x4/'
+symplex1_folder = conf.symplex_path+'Q6TL21_24x4/'
 model_status1 = 1 # set oriented path
 
 alignment_domain = 3

@@ -61,7 +61,7 @@ surface_section0, surface_section1 = \
                                   insertion_length)
 
 
-for conformation in  conf.conformations:
+for conformation in conf.conformations:
     model_reg = ModelReg()
     sess.set_model_reg(model_reg)
 

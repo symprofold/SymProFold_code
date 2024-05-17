@@ -37,12 +37,14 @@ conf.set_delete_termini_modes([0,1], 0)
 
 conf.set_species('Bbre', 'Brevibacillus brevis')
 conf.set_gene('P06546')
+conf.set_symplex_path('P06546/')
 conf.import_domains()
 
-symplex0_folder = 'P06546/P06546_13x6/'
+
+symplex0_folder = conf.symplex_path+'P06546_13x6/'
 model_status0 = 1 # set oriented path
 
-symplex1_folder = 'P06546/P06546_x2/'
+symplex1_folder = conf.symplex_path+'P06546_x2/'
 model_status1 = 1 # set oriented path
 
 alignment_pivot_pos = [0, 1][1]

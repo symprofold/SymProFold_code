@@ -2,6 +2,7 @@ import glob
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import pathlib
 import pickle
 import shutil
 
@@ -77,6 +78,12 @@ def gen_diagram(mode, ds, de, prefix, path_part1):
     '''
     Generate and save diagram for models.
     '''
+    work_dir = str(pathlib.Path().absolute())+'/'
+    pkl_files = sorted(glob.glob(work_dir+'result_*.pkl'))
+
+    if len(pkl_files) == 0:
+        return
+
     maxr = '/'+str(de)+': '
 
     i = -1
@@ -104,7 +111,12 @@ def gen_diagram(mode, ds, de, prefix, path_part1):
         if j%5 == 0:
            i += 1
 
-        pkl_file = 'result_'+m[0]+'.pkl'
+        pkl_files = sorted(glob.glob(work_dir+'result_'+m[0]+'.pkl'))
+
+        if len(pkl_files) == 0:
+            continue
+
+        pkl_file = pkl_files[0]
 
         with open(path_part1+pkl_file, 'rb') as f:
             d1 = pickle.load(f)
@@ -159,11 +171,53 @@ def gen_diagram(mode, ds, de, prefix, path_part1):
 
 
 if __name__ == "__main__":
-
+    work_dir = os.path.dirname(os.path.realpath(__file__))+'/'
     path_part1 = './'
     ptm_file = 'ranking_debug.json'
 
-    if os.path.isfile(path_part1+ptm_file) == True:
+    pkl_files = sorted(glob.glob(work_dir+'*.pkl'))
+    model_files_ranked = sorted(glob.glob(work_dir+'*.pkl'))
+
+
+    if os.path.isfile(work_dir+ptm_file) == True and len(pkl_files) <= 1:
+
+        import json
+
+        f = open(work_dir+ptm_file, 'r')
+        data = json.load(f)
+        f.close()
+
+        model_files = sorted(glob.glob(work_dir+'ranked_*.pdb'))
+
+        for i,m in enumerate(model_files):
+            iptmptm = float(data['iptm+ptm'][data['order'][i]])
+            model_i = int(\
+                        m.split('/')[-1].split('ranked_')[1].split('.pdb')[0])
+
+            if i != model_i:
+                continue
+
+            model_file = get_file(m)
+            h_atoms = 0
+            atoms = 0
+
+            for l in model_file:
+                atoms += 1
+
+                if len(l) > 13:
+                    if l[13] == 'H':
+                        h_atoms += 1
+
+            prefix = '' # relaxed
+
+            if h_atoms/atoms < 0.1:
+                prefix = 'unrelaxed_' # unrelaxed
+
+            filename_new = 'rank'+('00'+str(i))[-2:]+'_'+ \
+                                (str(round(iptmptm,3))+'000')[0:5]+'.pdb'
+            shutil.copyfile(m, work_dir+prefix+filename_new)
+
+    elif os.path.isfile(work_dir+ptm_file) == True:
         ptm_file_lines = get_file(path_part1+ptm_file)
         modelssort = sort_models(ptm_file_lines)
 
