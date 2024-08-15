@@ -104,7 +104,7 @@ def get_score(path):
     return score
 
 
-def subchainabbr_to_subchains(subchain_abbr):
+def subchainabbr_to_subchains(subchain_abbr, conf=None):
     '''
     Get subchain range (first domain, last domain) from subchain abbreviation.
 
@@ -121,7 +121,16 @@ def subchainabbr_to_subchains(subchain_abbr):
         if subchain_abbr[0] in 'abcdefghijklmnopqrstuvwxyz':
             subchain_abbr = subchain_abbr[1:]
 
-    if len(subchain_abbr) == 0:
+    if subchain_abbr == 'FL':
+        if conf == None:
+            ctl.e(subchain_abbr)
+            ctl.error('subchainabbr_to_subchains: '+ \
+                      '"FL" in subchain_abbr, but no conf provided to '+ \
+                      'retrieve the total number of domains')
+        else:
+            subchain_range = (1, len(conf.domains))
+
+    elif len(subchain_abbr) == 0:
         pass
     elif len(subchain_abbr) == 1: # e.g. '2' -> (2,)
         subchain_range = (int(subchain_abbr[0]),)
@@ -158,7 +167,7 @@ def get_clashes(path):
     if cla < 0:
         ctl.e(filename)
         ctl.e(cla)
-        ctl.error('ERROR: get_clashes')
+        ctl.error('get_clashes')
 
     return cla
 

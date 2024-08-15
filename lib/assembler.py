@@ -97,38 +97,32 @@ class Assembler():
         except Exception as e:
             if str(e) == 'build_layer: tilt of ax1 not within range':
                 ctl.p(str(e))
-
                 return False, 2, str(e)
 
             elif str(e) == 'RotSymmAxis: init: '+ \
                             'rotational symmetry axis not perpendicular to '+ \
                             'xy plane':
                 ctl.p(str(e))
-
                 return False, 4, str(e)
 
             elif str(e) == 'RotSymmAxis: get_rotsymm_axis: '+ \
                             'determination of rotational symmetry axis '+ \
                             'not possible':
                 ctl.p(str(e))
-
                 return False, 6, str(e)
 
             elif str(e) == 'RotSymmAxis: init: '+ \
                             'z component of rotational symmetry axis is <=0':
                 ctl.p(str(e))
-
                 return False, 7, str(e)
 
             elif str(e) == 'process_layer_lc: no symmetry group determined':
                 ctl.p(str(e))
-
                 return False, 9, str(e)
 
             elif str(e) == 'Assembler: alignment_pivot_res: '+ \
                             'no coincident residues':
                 ctl.p(str(e))
-
                 return False, 12, str(e)
 
             else:
@@ -144,29 +138,29 @@ class Assembler():
         except Exception as e:
             if str(e) == 'combine_chains: dist_check failed':
                 ctl.p(str(e))
-
                 return False, 3, str(e)
 
             elif str(e) == 'snapin_layer: snapin distance too large':
                 ctl.p(str(e))
-
                 return False, 5, str(e)
 
             elif str(e) == 'snapin_layer: snapin rotation too large':
                 ctl.p(str(e))
-
                 return False, 8, str(e)
 
             elif str(e) == 'snapin_layer: snapin rotation step too large':
                 ctl.p(str(e))
-
                 return False, 10, str(e)
 
             elif str(e) == 'process_layer_specific: '+ \
                             'ax surface completely within termini':
                 ctl.p(str(e))
-
                 return False, 11, str(e)
+
+            elif str(e) == 'process_layer_specific: '+ \
+                            'monomers not complete':
+                ctl.p(str(e))
+                return False, 13, str(e)
 
             else:
                 ctl.error('run: Exception')
@@ -1021,7 +1015,14 @@ class Assembler():
 
             # create and export primitive unit cell if possible
             self.layers[1].primitive_unit_cell.definition(self.lc_offset)
-            self.layers[1].primitive_unit_cell.suggest_molecules()
+            monomers_complete = \
+                        self.layers[1].primitive_unit_cell.suggest_molecules()
+
+            # raise exception if monomer(s) of primitive unit cell not complete
+            if monomers_complete == False:
+                raise Exception('process_layer_specific: '+ \
+                                        'monomers not complete')
+
             model_complete = self.layers[1].primitive_unit_cell. \
                                         combine_to_model(combination_model_id)
 

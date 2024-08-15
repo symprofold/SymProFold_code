@@ -1,14 +1,32 @@
 import ctl
+import files
+import interface_matrix_signed
 import metadata
 
 import glob
 import os
+
+from structure.modelreg import ModelReg
+from structure.axis import Axis
 
 
 '''
 Module providing functions to determine potential combinations of SymPlexes and
 calculate/assemble them.
 '''
+
+def predscen_comb(symplex0_predscenarios, symplex1_predscenarios):
+    '''
+    Get combinations of prediction scenarios.
+    '''
+    comb = []
+
+    for symplex0_predscen in symplex0_predscenarios:
+        for symplex1_predscen in symplex1_predscenarios:
+            comb.append((symplex0_predscen, symplex1_predscen))
+
+    return comb
+
 
 def symplex_comb(ax):
     '''
@@ -29,6 +47,56 @@ def symplex_comb(ax):
                 ctl.p(files0)
                 ctl.p(f1)
                 ctl.p(files1)
+
+    return comb
+
+
+def predscen_symplex_comb(symplex0_predscenarios, symplex1_predscenarios, \
+                          sess, conf):
+    '''
+    Determine SymPlex combinations of all prediction scenarios.
+    '''
+    comb = []
+    predscen_combinations = predscen_comb(symplex0_predscenarios, \
+                                          symplex1_predscenarios)
+
+    for predscen_combination in predscen_combinations:
+        symplex0_predscen = predscen_combination[0]
+        symplex1_predscen = predscen_combination[1]
+        symplex0_folder, symplex1_folder = symplex_folders( \
+                                        symplex0_predscen, symplex1_predscen, \
+                                        conf.symplex_path, conf)
+
+        ctl.p('symplex0_folder:')
+        ctl.p(symplex0_folder)
+        ctl.p('symplex1_folder:')
+        ctl.p(symplex1_folder)
+
+        model_reg = ModelReg()
+        sess.set_model_reg(model_reg)
+
+        ax = [Axis(model_reg), Axis(model_reg)]
+
+        ax[0].set_session(sess, conf)
+        model_status0 = files.get_model_status(conf, symplex0_folder)
+        ax[0].set_folder(symplex0_folder, model_status0)
+
+        ax[1].set_session(sess, conf)
+        model_status1 = files.get_model_status(conf, symplex1_folder)
+        ax[1].set_folder(symplex1_folder, model_status1)
+
+        sc0 = metadata.get_subchain_abbr(ax[0].pathRaw)
+        sc1 = metadata.get_subchain_abbr(ax[1].pathRaw)
+
+        # check if SymPlex combination covers full sequence
+        if seq_coverage(sc0, sc1, conf) == False:
+            continue
+
+        # get combinations of SymPlexes
+        symplex_combinations = symplex_comb(ax)
+
+        for symplex_combination in symplex_combinations:
+            comb.append((predscen_combination, symplex_combination))
 
     return comb
 
@@ -113,16 +181,20 @@ def seq_coverage(sc0, sc1, conf):
     '''
     Check if SymPlex combination covers full sequence.
     '''
+    sc0_ = metadata.subchainabbr_to_subchains(sc0, conf)
+    sc1_ = metadata.subchainabbr_to_subchains(sc1, conf)
 
     # check if N terminal end is included in sequence
     if not(sc0 == 'FL' or sc1 == 'FL' or \
-           int(sc0[0]) == 1 or int(sc1[0]) == 1):
+           int(sc0_[0]) == 1 or int(sc1_[0]) == 1):
+
         return False
 
     # check if C terminal end is included in sequence
     if not(sc0 == 'FL' or sc1 == 'FL' or \
-           int(sc0[-1]) == len(conf.domains) or \
-           int(sc1[-1]) == len(conf.domains)):
+           int(sc0_[-1]) == len(conf.domains) or \
+           int(sc1_[-1]) == len(conf.domains)):
+
         return False
 
     return True
@@ -154,20 +226,20 @@ def subchain_order(symplex0_folder, symplex1_folder, insertion_length, conf):
     if len(sc1) == 1:
         sc1 = (sc1[0], sc1[0])
 
-    if sc0[0] < sc1[0] or sc0[1] < sc1[1]:
-        if insertion_length == 1:
-            if sc0[1]-sc0[0] < len(conf.domains):
 
-                return 1
+    if sc0[0] < sc1[0]:
+        return 0
 
-        else:
-
-            return 0
-
-    if sc0[0] > sc1[0] or sc0[1] > sc1[1]:
+    elif sc0[0] > sc1[0]:
         return 1
 
-    if sc0[0] == sc1[0] or sc0[1] == sc1[1]:
+    elif sc0[0] == sc1[0] and sc0[1] > sc1[1]:
+        return 0
+
+    elif sc0[0] == sc1[0] and sc0[1] < sc1[1]:
+        return 1
+
+    elif sc0[0] == sc1[0] or sc0[1] == sc1[1]:
         return -1
 
     ctl.error('subchain_order')
@@ -191,7 +263,7 @@ def insertion_lengths(sc0, sc1):
 
 
 def surface_sections(symplex0_domains, symplex1_domains, sc_order, domains, \
-                     start_domain, domain_start_pos, insertion_length=-1):
+                     start_domain, start_domain_pos, insertion_length=-1):
     '''
     Determine resulting surface sections (active domains) of symplex0 and
     symplex1.
@@ -227,20 +299,20 @@ def surface_sections(symplex0_domains, symplex1_domains, sc_order, domains, \
 
     if insertion_length == -1:
         surface_section0 = [ \
-            [1, domains[start_domain-2+domain_start_pos][1]] \
+            [1, domains[start_domain-2+start_domain_pos][1]] \
             ]
         surface_section1 = [ \
-            [domains[start_domain-1+domain_start_pos][0], 2000] \
+            [domains[start_domain-1+start_domain_pos][0], 2000] \
             ]
 
     elif insertion_length == 1:
         surface_section0 = [ \
-            [1, domains[start_domain-2+domain_start_pos][1]], \
-            [domains[start_domain+domain_start_pos][0], 2000] \
+            [1, domains[start_domain-2+start_domain_pos][1]], \
+            [domains[start_domain+start_domain_pos][0], 2000] \
             ]
         surface_section1 = [ \
-            [domains[start_domain-1+domain_start_pos][0], \
-             domains[start_domain-1+domain_start_pos][1]] \
+            [domains[start_domain-1+start_domain_pos][0], \
+             domains[start_domain-1+start_domain_pos][1]] \
             ]
 
     if sc_order == 0:
@@ -280,6 +352,37 @@ def symplex_folders(symplex0_predscen, symplex1_predscen, \
     return symplex0_folder, symplex1_folder
 
 
+def interface_matrix_domain(ax, domain, conf):
+    '''
+    Get interface distogram for a given domain.
+    '''
+    fn = ax.model_active_path.split('/')[-1].split('.pdb')[0]
+    files = sorted(glob.glob(ax.path+'**/clashes/'+fn+'*.pdb'))
+
+    if len(files) == 0:
+        ctl.e(files)
+        ctl.error('interface_matrix_domain: no unique pdb file found')
+
+
+    # create list of residues to exclude (residues of the other domains)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Terminus residues are not included in the interface matrix.
+    excl_res = []
+
+    for r in range(1, conf.domains[domain-1][0]):
+        if r not in excl_res:
+            excl_res.append(r)
+    
+    for r in range(conf.domains[domain-1][1]+1, 5000):
+        if r not in excl_res:
+            excl_res.append(r)
+
+
+    distogram = interface_matrix_signed.load(files[0], excl_res)
+
+    return distogram
+
+
 def assembly_dir_rename(assembler, assembly_return, ax, \
                         symplex_combination, \
                         insertion_length, \
@@ -298,7 +401,8 @@ def assembly_dir_rename(assembler, assembly_return, ax, \
                        9: 'nosymmgroup', \
                       10: 'snapinrotstep', \
                       11: 'withintermini', \
-                      12: 'nocoincidentres' }
+                      12: 'nocoincidentres', \
+                      13: 'incompletemonomer' }
 
     #  1:assembly possible
     #  2:assembly not possible because tilt >45°
@@ -314,6 +418,7 @@ def assembly_dir_rename(assembler, assembly_return, ax, \
     # 10:assembly not possible because snapin rotation step too large
     # 11:assembly not possible because ax surface completely within termini
     # 12:assembly not possible because no coincident residues
+    # 13:monomer(s) of the primitive unit cell not complete
 
     path_combination_part1 = '/'.join(conf.export_path.split('/')[:-2])+'/'
 
@@ -321,16 +426,32 @@ def assembly_dir_rename(assembler, assembly_return, ax, \
         validation_scores = \
                     assembler.layers[1].primitive_unit_cell.validation_scores
 
+        score_quality_txt = (str(round(validation_scores[0], 3))+'000')[:5]
+        score_clash_txt = (str(round(validation_scores[1], 3))+'000')[:5]
+        score_bend_txt = (str(round(validation_scores[2], 3))+'000')[:5]
+        backbone_clashes_txt = (str(round(validation_scores[3], 4))+'0000')[:6]
+
+        if score_quality_txt[0] == '0':
+            score_quality_txt = score_quality_txt[1:]
+
+        if score_clash_txt[0] == '0':
+            score_clash_txt = score_clash_txt[1:]
+
+        if score_bend_txt[0] == '0':
+            score_bend_txt = score_bend_txt[1:]
+
+        if backbone_clashes_txt[0] == '0':
+            backbone_clashes_txt = backbone_clashes_txt[1:]
+
         os.rename(conf.export_path, path_combination_part1+ \
             str(ax[0].fold)+str(ax[1].fold)+'_'+ \
             str(metadata.get_subchain_abbr(ax[0].pathRaw))+'-'+ \
                     str(metadata.get_subchain_abbr(ax[1].pathRaw))+'_'+ \
-            str(round(validation_scores[0], 3))+'_'+ \
-            str(round(validation_scores[1], 3))+'_'+ \
-            str(round(validation_scores[2], 3))+'_'+ \
+            score_quality_txt+'_'+score_clash_txt+'_'+score_bend_txt+'_'+ \
+            backbone_clashes_txt+'_'+ \
             'd'+str(alignment_domain)+'_'+ \
             str(2*(insertion_length+1)+alignment_pivot_pos)+'_'+ \
-            str(symplex_combination[0])+str(symplex_combination[1]))
+            str(symplex_combination[0])+'-'+str(symplex_combination[1]))
 
     elif assembly_return in result_infixes: # assembly not possible
         os.rename(conf.export_path, path_combination_part1+ \
@@ -341,7 +462,7 @@ def assembly_dir_rename(assembler, assembly_return, ax, \
             result_infixes[assembly_return]+'_'+ \
             'd'+str(alignment_domain)+'_'+ \
             str(2*(insertion_length+1)+alignment_pivot_pos)+'_'+ \
-            str(symplex_combination[0])+str(symplex_combination[1]))
+            str(symplex_combination[0])+'-'+str(symplex_combination[1]))
 
     else:
         ctl.e(assembly_return)
