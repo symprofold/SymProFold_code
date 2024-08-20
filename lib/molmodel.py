@@ -54,7 +54,7 @@ def get_termini(rmsds, start_res=1, termini_with_signalsequence=True):
         if rmsds[r] <= cutoff_C:
             termini[1] = r+1
 
-    if termini_with_signalsequence:
+    if termini_with_signalsequence and start_res != 21:
 
         # signal sequence included in N terminus
         if 21 in rmsds and 25 in rmsds:

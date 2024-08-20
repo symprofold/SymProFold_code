@@ -234,10 +234,16 @@ def subchain_order(symplex0_folder, symplex1_folder, insertion_length, conf):
         return 1
 
     elif sc0[0] == sc1[0] and sc0[1] > sc1[1]:
-        return 0
+        if insertion_length == -1:
+            return 1
+        else:
+            return 0
 
     elif sc0[0] == sc1[0] and sc0[1] < sc1[1]:
-        return 1
+        if insertion_length == -1:
+            return 0
+        else:
+            return 1
 
     elif sc0[0] == sc1[0] or sc0[1] == sc1[1]:
         return -1

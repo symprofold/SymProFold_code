@@ -5,16 +5,23 @@ import os
 import re
 
 
-def get_cif_col(l, colnumb):
-    ''' Get column of given column number in line of cif file. '''
-
-    col = 0
+def get_cif_col(l, colnumb, datatype=None):
+    '''
+    Get cell data of given column number in a line of a cif file.
+    '''
+    col = None
 
     # replace multiple spaces by a single space
     l = re.sub(r'\s{2,}', ' ', l)
 
     l = l.split(' ')
-    col = int(l[colnumb])
+
+    if datatype == 'int':
+        col = int(l[colnumb])
+    if datatype == 'str':
+        col = l[colnumb]
+    else:
+        col = l[colnumb]
 
     return col
 
@@ -29,18 +36,21 @@ def sort_lines(out):
 
     res_id_max = 0
     for l in out:
-        res_id = int(get_cif_col(l, 13))
+        res_id = int(get_cif_col(l, 13, 'int'))
         if res_id > res_id_max:  
             res_id_max = res_id
 
+    chainid_len = len(get_cif_col(l, 6, 'str'))
+    if chainid_len < 1:
+        ctl.error('sort_lines: len(chainid_len) < 1')
 
     for l in out:
-        res_id = int(get_cif_col(l, 13))
+        res_id = int(get_cif_col(l, 13, 'int'))
 
         res_id_str = str(res_id)+'     '
         pos_sep1 = l.find(' . ')
-        l2 = l[:pos_sep1+11]+res_id_str[:len(str(res_id_max))+1]+ \
-             l[pos_sep1+10+len(str(res_id_max))+1:]        
+        l2 = l[:pos_sep1+10+chainid_len]+res_id_str[:len(str(res_id_max))+1]+ \
+             l[pos_sep1+9+chainid_len+len(str(res_id_max))+1:]   
                     # len(str(res_id_max))+1:
                     # adjust column width to the number of digits
 
@@ -65,28 +75,49 @@ def sort_lines(out):
 
 
 def postprocess(import_file, export_file):
-    ''' Postprocess of cif file. '''
-    
+    '''
+    Postprocessing of cif file.
+
+    E.g. removal of helix and sheet metadata.
+    '''
     f = filesystem.get_file(import_file)
     current_chain_id = 0
 
     out = []
     out2 = []
-    collect_active = 0
+    collect_active = False
+    skip_active = False
     
     for i,l in enumerate(f):
-        if l[:4] == 'HELX':
+
+        if skip_active == True and (l.strip() == '' or \
+                l.startswith(( \
+                    '#', 'data_', 'loop_', 'global_', 'save_', 'stop_'))):
+            skip_active = False
+
+        if l.startswith('loop_'):
+            if i+1 < len(f):
+                if f[i+1].startswith(('_struct_sheet_range.', \
+                                      '_struct_conf.')):
+                    skip_active = True
+
+        if skip_active == True:
             continue
+            
+
+        if l[:4] == 'HELX':
+            ctl.error('postprocess: "HELX" remaining')
+
         if l[:1] == '?':
-            continue        
+            ctl.error('postprocess: "?" remaining')
         
         if l[:4] == 'ATOM':
             out2.append(l)
-            collect_active = 1
+            collect_active = True
 
         else:
-            if collect_active == 1:
-                collect_active = 0
+            if collect_active == True:
+                collect_active = False
                 out2 = sort_lines(out2)
                 for l2 in out2:
                     out.append(l2)
