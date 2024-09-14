@@ -1,5 +1,6 @@
 import ctl
 import files
+import filesystem
 import interface_matrix_signed
 import metadata
 
@@ -427,6 +428,8 @@ def assembly_dir_rename(assembler, assembly_return, ax, \
     # 13:monomer(s) of the primitive unit cell not complete
 
     path_combination_part1 = '/'.join(conf.export_path.split('/')[:-2])+'/'
+    filesystem.create_folder([path_combination_part1+'ranking_candidates/', \
+                              path_combination_part1+'filtered_out/'])
 
     if assembly_return == 1: # assembly possible
         validation_scores = \
@@ -449,7 +452,7 @@ def assembly_dir_rename(assembler, assembly_return, ax, \
         if backbone_clashes_txt[0] == '0':
             backbone_clashes_txt = backbone_clashes_txt[1:]
 
-        os.rename(conf.export_path, path_combination_part1+ \
+        foldername_new = \
             str(ax[0].fold)+str(ax[1].fold)+'_'+ \
             str(metadata.get_subchain_abbr(ax[0].pathRaw))+'-'+ \
                     str(metadata.get_subchain_abbr(ax[1].pathRaw))+'_'+ \
@@ -457,10 +460,23 @@ def assembly_dir_rename(assembler, assembly_return, ax, \
             backbone_clashes_txt+'_'+ \
             'd'+str(alignment_domain)+'_'+ \
             str(2*(insertion_length+1)+alignment_pivot_pos)+'_'+ \
-            str(symplex_combination[0])+'-'+str(symplex_combination[1]))
+            str(symplex_combination[0])+'-'+str(symplex_combination[1])
+
+        os.rename(conf.export_path, path_combination_part1+foldername_new+'/')
+
+        if round(validation_scores[1], 3) >= 2.000:
+            f = open(path_combination_part1+'filtered_out/'+ \
+                     foldername_new+'.txt', 'w')
+            f.write('') 
+            f.close()
+        else:
+            f = open(path_combination_part1+'ranking_candidates/'+ \
+                     foldername_new+'.txt', 'w')
+            f.write('') 
+            f.close()
 
     elif assembly_return in result_infixes: # assembly not possible
-        os.rename(conf.export_path, path_combination_part1+ \
+        foldername_new = \
             str(ax[0].fold)+str(ax[1].fold)+'_'+ \
             str(metadata.get_subchain_abbr(ax[0].pathRaw))+'-'+ \
                     str(metadata.get_subchain_abbr(ax[1].pathRaw))+ \
@@ -468,7 +484,14 @@ def assembly_dir_rename(assembler, assembly_return, ax, \
             result_infixes[assembly_return]+'_'+ \
             'd'+str(alignment_domain)+'_'+ \
             str(2*(insertion_length+1)+alignment_pivot_pos)+'_'+ \
-            str(symplex_combination[0])+'-'+str(symplex_combination[1]))
+            str(symplex_combination[0])+'-'+str(symplex_combination[1])
+
+        os.rename(conf.export_path, path_combination_part1+foldername_new+'/')
+
+        f = open(path_combination_part1+'filtered_out/'+ \
+                 foldername_new+'.txt', 'w')
+        f.write('') 
+        f.close()
 
     else:
         ctl.e(assembly_return)

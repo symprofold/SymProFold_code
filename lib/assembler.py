@@ -55,8 +55,8 @@ class Assembler():
         self.export_file_infix = export_file_infix
 
         self.contact_submodel_orientation = contact_submodel_orientation
-                # relative position of second ax0 representant regarding
-                # ax1 representant
+                # relative position of second ax0 representation/representative
+                # regarding ax1 representation/representative
 
         self.model_reg = self.axes[0].model_reg
 
@@ -241,12 +241,12 @@ class Assembler():
 
     def build_layer(self):
         '''
-        Place axis representants so that they form the layer.
+        Place axis representations/representatives so that they form the layer.
 
         4 main steps:
         - step 1: place central ax0
         - step 2: place ax1 models around central ax
-        - step 3: place ax0 representants around ax1
+        - step 3: place ax0 representations/representatives around ax1
         - step 4: place ax0 models flattened around ax1
         '''
         if self.layers[1].symmgroup == '' and \
@@ -272,7 +272,7 @@ class Assembler():
         for l in self.layers:
             l.add_representation(ax0_current_model)
 
-        # set name to submodels of ax0 representant
+        # set name to submodels of ax0 representation/representative
         for i in range(1, 1+ax0.fold):
             sess.rename_model((ax0_current_model.id[0], i), \
                     'ax'+ax0_current_model.idstr+'mol'+str(i))
@@ -286,7 +286,7 @@ class Assembler():
             layer_flat = self.layers[1]
 
             # no influence on general assembly, but better orientation of
-            # ax1 representants in first steps
+            # ax1 representations/representatives in first steps
             if ax1.fold > 2:
                 orientation_offset = self.contact_submodel_orientation*(-1)
 
@@ -467,8 +467,8 @@ class Assembler():
                               'tilt of ax1 not within range')
 
 
-                # bring ax1 representant in flattened position
-                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # bring ax1 representation/representative in flattened position
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 if max(self.conf.flatten_modes) >= 0:
                     model_tmp_center = structure.complex_.get_center(
                         model_id_tmp, \
@@ -502,8 +502,8 @@ class Assembler():
                 sess.close_id(model_id_tmp)
 
 
-            # step 3: place ax0 representants around ax1
-            # ------------------------------------------
+            # step 3: place ax0 representations/representatives around ax1
+            # ------------------------------------------------------------
             if max(self.conf.flatten_modes) >= 0:
                 ax1_models = layer.ax_models(ax1)
 
@@ -527,12 +527,13 @@ class Assembler():
                             (ax0_current_model.id[0], dest_submodel_id)
                             )
 
-                    # set name to submodels of ax0 representant
+                    # set name to submodels of ax0 representation/
+                    # representative
                     for i in range(1,1+ax0.fold):
                         sess.rename_model((ax0_current_model.id[0], i), \
                                 'ax'+str(2+ax1_model_i)+'mol'+str(i))
 
-                    # determine rotation of ax0 representant
+                    # determine rotation of ax0 representation/representative
                     transl_vec = sess.measure_transl_vec( \
                                         (ax0_current_model.id[0], 1), (1, 1))
                     ax0_current_model.set_trans_vect(transl_vec)
@@ -563,7 +564,8 @@ class Assembler():
                                         ax0_current_model.get_center())
 
 
-                    # set name to submodels of ax0 representant
+                    # set name to submodels of ax0 representation/
+                    # representative
                     for i in range(1, 1+ax0.fold):
                         sess.rename_model( \
                             (ax0_current_model.id[0], i), \
@@ -573,7 +575,7 @@ class Assembler():
                         [ax0_model.trans_vect[0], ax0_model.trans_vect[1], 0])
 
                     # set connections, use correct submodels for each
-                    # representant
+                    # representation/representative
                     source_submodel_id = ((ax0_model_i+1)+ \
                             ax0_pairing_offset+orientation_offset-1)%ax0.fold+1
 
@@ -941,7 +943,7 @@ class Assembler():
             'complete_chains_', \
             'primitive_unit_cell_', \
             'assembly_3x3_'][flatten_mode]+ \
-            lc_offset_infix+self.conf.version+'.cif'
+            lc_offset_infix+'v'+self.conf.version+'.cif'
         export_path = filesystem.clean_path(export_path)
 
         # superposition

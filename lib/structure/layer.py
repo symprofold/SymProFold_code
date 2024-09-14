@@ -85,8 +85,8 @@ class Layer():
 
     def ax_models(self, ax, order=None):
         '''
-        Get all representants of a given Axis object ax that are assigned to
-        this layer.
+        Get all representations/representatives of a given Axis object ax that
+        are assigned to this layer.
         '''
         if order == None:
             ax_model_ids = sorted(list( \

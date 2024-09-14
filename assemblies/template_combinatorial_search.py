@@ -66,7 +66,7 @@ conf.set_delete_termini_modes([1], 0)
 path_export_postfix_running = '_running'
             # postfix for temporary name of export folder during runtime
 
-conf.set_export_path_postfix('_'+conf.gene+'_'+conf.version+'/'+ \
+conf.set_export_path_postfix('_'+conf.gene+'_v'+conf.version+'/'+ \
                                         conf.species+'_'+conf.species_name)
 conf.import_domains()
 
@@ -245,7 +245,7 @@ for predscen_symplex_combination in predscen_symplex_combinations:
 
 
                 conf.set_export_path_postfix( \
-                    '_'+conf.gene+'_'+conf.version+'/'+ \
+                    '_'+conf.gene+'_v'+conf.version+'/'+ \
                     conf.species+'_'+conf.species_name+'_'+ \
                     str(ax[0].fold)+str(ax[1].fold)+'_'+ \
                     str(metadata.get_subchain_abbr(ax[0].pathRaw))+'-'+ \

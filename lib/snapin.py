@@ -27,9 +27,11 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
     '''
     Snap axes 0 and 1 to orientation points.
     2 steps:
-    - step 1: alignment of first (initial) representant of axis 0 to [0, 0, 0],
-      global translation of all representants of all axes.
-    - Snap axes 0 and 1 to snapin points (orientation points).
+    - step 1: alignment of first (initial) representation/representative of
+        axis 0 to [0, 0, 0], with global relative translation of
+        all representations/representatives of all axes
+    - step 2:
+        snap-in of axes 0 and 1 to snapin points (orientation points)
     '''
     max_snapin_distance = 80
     
@@ -41,22 +43,22 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
     ax0_center = ax0_order0_model.get_center()
 
 
-    # collect representants/models to snapin for each axis
+    # collect representations (models) to snapin for each axis
     models_to_snapin = [[] for ax in axes]
 
     for i,ax in enumerate(axes):
         models_to_snapin[i] = layer.ax_models(ax)
 
 
-    # step 1: set center of ax0 to [0, 0, 0]
-    # --------------------------------------
+    # step 1: align center of ax0 to [0, 0, 0]
+    # ----------------------------------------
     for i,ax in enumerate(axes):
         for j,m in enumerate(models_to_snapin[i]):
             sess.run('move x '+str(-ax0_center[0])+' models #'+m.idstr)
             sess.run('move y '+str(-ax0_center[1])+' models #'+m.idstr)
 
 
-    # step 2: snap axis 0 and 1 representants to snapin points
+    # step 2: snap axis 0 and 1 representations to snapin points
     # (orientation points)
     # --------------------------------------------------------
 
@@ -71,10 +73,10 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
 
         # axis 1
         if i == 1:
-            # initial coords of representant 1 (rep1)
+            # initial coords of representation 1 (rep1)
             ax1_rep1 = models_to_snapin[i][ax0.preferred_bs].get_center()
 
-            # get snapin point for representant 1 (rep1) of ax1
+            # get snapin point for representation 1 (rep1) of ax1
             # Snapin point is nearest reference point.
             snapin_p_first, d = layer.get_ref_point_ax1(ax1_rep1, ax)
             d_xy = geometry.dist_xy(ax1_rep1, snapin_p_first)
@@ -100,17 +102,17 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
         ctl.d(vect_start)
 
 
-        # for current axis: iterate through axis representants to snapin
+        # for current axis: iterate through axis representations to snapin
         for j, model_to_snapin in enumerate(models_to_snapin[i]):
             ctl.d(model_to_snapin.id)
 
-            # initial coords of axis representant (ax_rep)
+            # initial coords of axis representation (ax_rep)
             ax_rep = model_to_snapin.get_center()
 
 
             # axis 0
             # ~~~~~~
-            # Center of each ax0 representant is directly aligned to
+            # Center of each ax0 representation is directly aligned to
             # snapin point.
 
             if i == 0:
@@ -135,11 +137,11 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
 
             # axis 1
             # ~~~~~~
-            # Center of each ax1 representant is directly aligned to
+            # Center of each ax1 representation is directly aligned to
             # snapin point.
 
             if i == 1:
-                # get snapin point for representant (ax_rep)
+                # get snapin point for representation (ax_rep),
                 # snapin point is nearest reference point
                 snapin_p, d = layer.get_ref_point_ax1(ax_rep, ax)
                 d_xy = geometry.dist_xy(ax_rep, snapin_p)
@@ -156,7 +158,7 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
                     raise Exception('snapin_layer: snapin distance too large')
 
 
-                # align representant (ax_rep) to model with
+                # align representation (ax_rep) to model with
                 # preferred binding site
                 if j != ax0.preferred_bs:
                     sess.match( \
@@ -166,7 +168,7 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
 
 
                 # calculated (snapin) rotation angle of for
-                # representant (ax_rep) regarding preferred_bs model
+                # representation (ax_rep) regarding preferred_bs model
                 rot_angle = get_trans_rot_param(axes[0].fold, axes[1].fold, j)
 
 
@@ -176,7 +178,7 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
                 # (not necessary e.g. ax0 and ax1 are both 4-fold).
                 if rot_angle != 0:
 
-                    # perform snapin rotation of representant (ax_rep)
+                    # perform snapin rotation of representation (ax_rep)
                     rot_center = model_to_snapin.get_center()
 
                     if ax0_order0_model.flipped == True:
@@ -192,7 +194,7 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
                              model_to_snapin.idstr)
 
 
-                # rot angle of representant (ax_rep) (before rotation by
+                # rot angle of representation (ax_rep) (before rotation by
                 # rot_angle)
                 ax_rep_rot_angle = model_to_snapin.rot_angle
                 ctl.d('rot_angle')
@@ -285,7 +287,7 @@ def snapin_layer(axes, layer, conf, preserve_connections=False):
                                 set_connection(c, conn1_dest[c], 'snapin')
 
 
-                # coords (complex center) of representant (ax_rep) after
+                # coords (complex center) of representation (ax_rep) after
                 # match to preferred_bs model and rotation
                 ax_rep_center = model_to_snapin.get_center()
 

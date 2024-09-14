@@ -172,7 +172,7 @@ class Axis():
     
         self.surface_resids = list(set(_surface_resids))
 
-        # set/update new values in all representatants
+        # set/update new values in all representations
         for ax_rep in self.get_representations():
             self.get_representation(ax_rep).set_surface(self.surface)
 
@@ -389,8 +389,8 @@ class Axis():
         multimer_n = bib.get_multimer_n(self.model_active_path)
 
 
-        # create Axis_rep object and set it as representative of
-        # respective axis
+        # create Axis_rep object and set it as representation/representative
+        # of the respective axis
         ax_rep = Axis_rep(self.model_reg)
         ax_rep.set_id(opened_model_id)
         self.add_representation(ax_rep)

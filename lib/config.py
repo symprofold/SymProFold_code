@@ -16,7 +16,7 @@ class Config():
         ''' Initialization of the Config class. '''
 
         self.export_ax_predictions = True
-        self.version = 'v0-86'
+        self.version = '0.87.0'
 
         self.main_dir = filesystem.clean_path( \
                 os.path.dirname(os.path.realpath(__file__))+'/../')
@@ -201,20 +201,20 @@ class Config():
 
 
         self.layer_raw_path = self.export_path+ \
-                self.export_file_prefix+'_'+self.version+'.cxs'
+                self.export_file_prefix+'_v'+self.version+'.cxs'
         self.layer_aligned_raw_path = self.export_path+ \
-                self.export_file_prefix+'_aligned_'+self.version+'.cxs'
+                self.export_file_prefix+'_aligned_v'+self.version+'.cxs'
         self.layer_snapin_raw_path = self.export_path+ \
-                self.export_file_prefix+'_snapin_'+self.version+'.cxs'
+                self.export_file_prefix+'_snapin_v'+self.version+'.cxs'
         self.layer_complete_chains_raw_path = self.export_path+ \
-                self.export_file_prefix+'_complete_chains_'+self.version+'.cxs'
+                self.export_file_prefix+'_complete_chains_v'+self.version+'.cxs'
         self.layer_primitive_unit_cell_raw_path = self.export_path+ \
                 self.export_file_prefix+'_primitive_unit_cell_'+ \
-                self.version+'.cxs'
+                'v'+self.version+'.cxs'
 
 
         self.layer_raw_path = self.export_path+self.export_file_prefix+'_'+ \
-                              self.version+'.cxs'
+                              'v'+self.version+'.cxs'
 
         return
 
@@ -297,7 +297,7 @@ class Config():
             if os.path.exists( \
                 self.execution_dir+'setting_dir_superordinate.txt'):
                 path = os.path.dirname(os.path.realpath(__file__))+ \
-                       '/../../Structures_'+self.version+'/'
+                       '/../../Structures_v'+self.version+'/'
                 path = filesystem.clean_path(path)
             else:
                 path = self.execution_dir
