@@ -16,7 +16,7 @@ class Config():
         ''' Initialization of the Config class. '''
 
         self.export_ax_predictions = True
-        self.version = '0.87.0'
+        self.version = '1.0.0'
 
         self.main_dir = filesystem.clean_path( \
                 os.path.dirname(os.path.realpath(__file__))+'/../')
